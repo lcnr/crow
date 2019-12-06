@@ -35,20 +35,16 @@ impl GlobalContext {
         let display = Display::new(wb, cb, &events_loop).unwrap();
 
         let vertex1 = Vertex {
-            position: [-0.5, -0.5],
-            tex_coords: [0.0, 0.0],
+            position: [0.0, 0.0],
         };
         let vertex2 = Vertex {
-            position: [0.5, -0.5],
-            tex_coords: [1.0, 0.0],
+            position: [1.0, 0.0],
         };
         let vertex3 = Vertex {
-            position: [0.5, 0.5],
-            tex_coords: [1.0, 1.0],
+            position: [1.0, 1.0],
         };
         let vertex4 = Vertex {
-            position: [-0.5, 0.5],
-            tex_coords: [0.0, 1.0],
+            position: [0.0, 1.0],
         };
         let shape = vec![vertex1, vertex2, vertex3, vertex4];
 
@@ -66,16 +62,15 @@ impl GlobalContext {
         let mut closed = false;
         let mut t: f32 = 0.0;
         while !closed {
-            t = (t + 0.0002) % 1.0;
+
+            t = t + 0.002;
             let mut target = display.draw();
             target.clear_color(0.0, 0.0, 1.0, 1.0);
             let uniforms = uniform! {
-                matrix: [
-                    [1.0, 0.0, 0.0, 0.0],
-                    [0.0, 1.0, 0.0, 0.0],
-                    [0.0, 0.0, 1.0, 0.0],
-                    [ t , 0.0, 0.0, 1.0f32],
-                ],
+                target_size: display.get_framebuffer_dimensions(),
+                object_size: texture.dimensions(),
+                object_position: (0 , 0),
+                object_scale: (1 + t as u32, 2 - t as u32),
                 tex: sampler,
             };
 
