@@ -1,8 +1,9 @@
 use glium::{
     glutin::{ContextBuilder, Event, EventsLoop, WindowBuilder, WindowEvent},
     texture::{RawImage2d, Texture2d},
-    Display, Surface, uniform, DrawParameters,
-    uniforms::{Sampler, SamplerWrapFunction},
+    uniform,
+    uniforms::{MagnifySamplerFilter, Sampler, SamplerWrapFunction},
+    Display, DrawParameters, Surface,
 };
 
 use std::path::Path;
@@ -58,7 +59,9 @@ impl GlobalContext {
             glium::Program::from_source(&display, shader::VERTEX, shader::FRAGMENT, None).unwrap();
 
         let texture = Self::load_image(&display, "./test.png");
-        let sampler = Sampler::new(&texture).wrap_function(SamplerWrapFunction::Clamp);
+        let sampler = Sampler::new(&texture)
+            .wrap_function(SamplerWrapFunction::Clamp)
+            .magnify_filter(MagnifySamplerFilter::Nearest);
 
         let mut closed = false;
         let mut t: f32 = 0.0;
@@ -85,7 +88,7 @@ impl GlobalContext {
                     &DrawParameters {
                         blend: glium::Blend::alpha_blending(),
                         ..Default::default()
-                    }
+                    },
                 )
                 .unwrap();
             target.finish().unwrap();
