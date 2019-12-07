@@ -1,5 +1,6 @@
 extern crate crow;
 
 fn main() {
-    let _global_context = crow::GlobalContext::new().unwrap();
+    let mut global_context = crow::RenderingContext::new().unwrap();
+    global_context.game_loop().unwrap();
 }
