@@ -5,8 +5,8 @@ should allow users to do nearly everything they want without requiring custom re
 
 ## Features
 
-- [ ] basic pixel perfect rendering
-- [ ] image scaling
+- [x] basic pixel perfect rendering
+- [x] image scaling
 - [ ] color modulation
   - [ ] gray scale
 - [ ] multiplicative drawing

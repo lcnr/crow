@@ -1,7 +1,7 @@
 use std::{any, fmt, path::Path};
 
 use glium::{
-    glutin::{ContextBuilder, Event, EventsLoop, WindowBuilder, WindowEvent},
+    glutin::{ContextBuilder, EventsLoop, WindowBuilder},
     texture::{RawImage2d, Texture2d},
     Display, Frame, Program, Surface, VertexBuffer,
 };
@@ -34,7 +34,7 @@ impl<T> fmt::Debug for SkipDebug<T> {
 }
 
 #[derive(Debug)]
-pub struct RenderingContext {
+pub struct GlobalContext {
     display: SkipDebug<Display>,
     current_frame: SkipDebug<Frame>,
     events_loop: EventsLoop,
@@ -42,20 +42,22 @@ pub struct RenderingContext {
     vertex_buffer: VertexBuffer<Vertex>,
 }
 
-impl RenderingContext {
-    /// Creates a new `GlobalContext`.
-    pub fn new() -> Result<Self, ErrDontCare> {
+impl GlobalContext {
+    /// Creates a new context, using the given window `builder`.
+    pub fn from_window_builder(builder: WindowBuilder) -> Result<Self, ErrDontCare> {
         let events_loop = EventsLoop::new();
-        let wb = WindowBuilder::new();
         let cb = ContextBuilder::new();
-        let display = Display::new(wb, cb, &events_loop).unwrap();
+        let display = Display::new(builder, cb, &events_loop).map_err(|err| {
+            todo!("GlobalContext::from_window_builder: {:?}", err);
+            ErrDontCare
+        })?;
 
         let vertex_buffer = vertex::initialize_vertex_buffer(&display)?;
 
         let default_program =
             Program::from_source(&display, shader::VERTEX, shader::FRAGMENT, None).map_err(
                 |err| {
-                    todo!("RenderingContext::new: {:?}", err);
+                    todo!("GlobalContext::from_window_builder: {:?}", err);
                     ErrDontCare
                 },
             )?;
@@ -70,14 +72,23 @@ impl RenderingContext {
         })
     }
 
+    /// Creates a new `GlobalContext`.
+    pub fn new() -> Result<Self, ErrDontCare> {
+        Self::from_window_builder(WindowBuilder::new())
+    }
+
+    /// Creates a copy of the given `texture`.
     pub fn clone_texture(&mut self, texture: &Texture) -> Result<Texture, ErrDontCare> {
         let mut new = Texture {
-            inner: Texture2d::empty(&self.display.0, texture.inner.width(), texture.inner.height()).map_err(
-                |err| {
-                    todo!("RenderingContext::clone_texture: {:?}", err);
-                    ErrDontCare
-                },
-            )?
+            inner: Texture2d::empty(
+                &self.display.0,
+                texture.inner.width(),
+                texture.inner.height(),
+            )
+            .map_err(|err| {
+                todo!("GlobalContext::clone_texture: {:?}", err);
+                ErrDontCare
+            })?,
         };
 
         self.draw(&mut new, texture, (0, 0), &Default::default())?;
@@ -87,7 +98,7 @@ impl RenderingContext {
     /// Draws the `texture` on top of the `target`.
     /// This permanently alters the `target`, in case
     /// the original is still required, consider cloning it first
-    /// by calling `RenderingContext::clone_texture`.
+    /// by calling `GlobalContext::clone_texture`.
     pub fn draw(
         &mut self,
         target: &mut Texture,
@@ -128,10 +139,11 @@ impl RenderingContext {
         )
     }
 
+    /// Loads a texture from an image located at `path`.
     pub fn load_texture<P: AsRef<Path>>(&mut self, path: P) -> Result<Texture, ErrDontCare> {
         let image = image::open(path)
             .map_err(|err| {
-                todo!("RenderingContext::load_texture: {:?}", err);
+                todo!("GlobalContext::load_texture: {:?}", err);
                 ErrDontCare
             })?
             .to_rgba();
@@ -140,49 +152,22 @@ impl RenderingContext {
 
         let image = RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
         let texture2d = Texture2d::new(&self.display.0, image).map_err(|err| {
-            todo!("RenderingContext::load_texture: {:?}", err);
+            todo!("GlobalContext::load_texture: {:?}", err);
             ErrDontCare
         })?;
 
         Ok(Texture { inner: texture2d })
     }
 
-    pub fn game_loop(&mut self) -> Result<(), ErrDontCare> {
-        let texture = self.load_texture("test.png")?;
-        let copy = self.clone_texture(&texture)?;
-
-        let mut closed = false;
-        let mut t: f32 = 0.0;
-        let mut now = std::time::Instant::now();
-        let mut frames = 0;
-        while !closed {
-            frames += 1;
-            t = t + 0.02;
-
-            self.draw_to_screen(&texture, (t as i32, 17), &DrawConfig::default())?;
-            self.draw_to_screen(&copy, (t as i32, 200), &DrawConfig::default())?;
-            self.finalize_frame()?;
-
-            // listing the events produced by application and waiting to be received
-            self.events_loop.poll_events(|ev| match ev {
-                Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::CloseRequested => closed = true,
-                    _ => (),
-                },
-                _ => (),
-            });
-            if now.elapsed() > std::time::Duration::from_secs(1) {
-                println!("fps: {}", frames);
-                frames = 0;
-                now = std::time::Instant::now();
-            }
-        }
-        unimplemented!()
+    /// Returns the `EventsLoop` of this context.
+    pub fn events_loop(&mut self) -> &mut EventsLoop {
+        &mut self.events_loop
     }
 
+    /// Presents the current frame to the screen and prepares for the next frame.
     pub fn finalize_frame(&mut self) -> Result<(), ErrDontCare> {
         self.current_frame.0.set_finish().map_err(|err| {
-            todo!("RenderingContext::finalize_frame: {:?}", err);
+            todo!("GlobalContext::finalize_frame: {:?}", err);
             ErrDontCare
         })?;
 
@@ -192,7 +177,7 @@ impl RenderingContext {
     }
 }
 
-impl Drop for RenderingContext {
+impl Drop for GlobalContext {
     fn drop(&mut self) {
         if let Err(err) = self.current_frame.0.set_finish() {
             panic!("GlobalContext::drop: set_finish failed: {:?}", err);
