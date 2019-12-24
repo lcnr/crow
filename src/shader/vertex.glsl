@@ -8,6 +8,7 @@ uniform uvec2 target_dimensions;
 uniform uvec2 object_dimensions;
 uniform ivec2 object_position;
 uniform uvec2 object_scale;
+uniform float depth;
 
 void main() {
     tex_coords = position;
@@ -18,5 +19,5 @@ void main() {
     );
 
 
-    gl_Position = vec4(target_pos, 0.0, 1.0);
+    gl_Position = vec4(target_pos, depth, 1.0);
 }

@@ -7,6 +7,7 @@ should allow users to do nearly everything they want without requiring custom re
 
 - [x] basic pixel perfect rendering
 - [x] image scaling
+- [ ] depth
 - [ ] color modulation
   - [ ] gray scale
 - [ ] multiplicative drawing
