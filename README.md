@@ -10,6 +10,7 @@ should allow users to do nearly everything they want without requiring custom re
 - [x] depth
 - [x] color modulation
   - [x] gray scale
-- [ ] multiplicative drawing
+- [ ] subtextures (spritesheets)
+- [ ] different drawing modes
 - [ ] actual error handling
 - [ ] custom renderer support
