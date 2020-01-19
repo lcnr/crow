@@ -19,7 +19,7 @@ static VERTEX_DATA: [GLfloat; 8] = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
 extern "system" fn debug_callback(
     source: GLenum,
     ty: GLenum,
-    id: GLuint,
+    _id: GLuint,
     severity: GLenum,
     length: GLsizei,
     message: *const GLchar,
@@ -95,7 +95,8 @@ impl Drop for Backend {
 }
 
 impl Backend {
-    pub fn initialize(window: WindowBuilder, events_loop: EventsLoop) -> Result<Self, ErrDontCare> {
+    pub fn initialize(window: WindowBuilder) -> Result<Self, ErrDontCare> {
+        let events_loop = EventsLoop::new();
         let gl_window = glutin::ContextBuilder::new()
             .build_windowed(window, &events_loop)
             .unwrap();
@@ -159,7 +160,7 @@ impl Backend {
 
         // prepare screen for the first frame
         unsafe {
-            gl::ClearColor(0.3, 0.3, 0.3, 1.0);
+            gl::ClearColor(0.1, 0.4, 0.7, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
@@ -176,8 +177,47 @@ impl Backend {
         })
     }
 
+    pub fn resize_window(&mut self, width: u32, height: u32) {
+        self.gl_window
+            .window()
+            .set_inner_size(From::from((width, height)))
+    }
+
     pub fn window_dimensions(&self) -> (u32, u32) {
         self.gl_window.window().get_inner_size().unwrap().into()
+    }
+
+    pub fn clear_texture_depth(
+        &mut self,
+        texture: &mut tex::RawTexture,
+    ) -> Result<(), ErrDontCare> {
+        unsafe {
+            gl::BindFramebuffer(gl::FRAMEBUFFER, texture.frame_buffer_id);
+            gl::Clear(gl::DEPTH_BUFFER_BIT);
+        }
+
+        Ok(())
+    }
+
+    pub fn clear_texture_color(
+        &mut self,
+        texture: &mut tex::RawTexture,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        unsafe {
+            gl::BindFramebuffer(gl::FRAMEBUFFER, texture.frame_buffer_id);
+
+            let mut old = [1.0, 1.0, 1.0, 1.0];
+            gl::GetFloatv(
+                gl::COLOR_CLEAR_VALUE,
+                &mut old as *mut [GLfloat; 4] as *mut GLfloat,
+            );
+            gl::ClearColor(color.0, color.1, color.2, color.3);
+            gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl::ClearColor(old[0], old[1], old[2], old[3]);
+        }
+
+        Ok(())
     }
 
     pub fn finalize_frame(&mut self) -> Result<(), ErrDontCare> {
@@ -190,7 +230,6 @@ impl Backend {
             }
 
             gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
-            gl::ClearColor(0.3, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 

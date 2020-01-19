@@ -5,7 +5,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use glutin::EventsLoop;
+use glutin::{EventsLoop, WindowBuilder};
 
 mod backend;
 pub mod color;
@@ -26,7 +26,7 @@ impl<T> fmt::Debug for SkipDebug<T> {
     }
 }
 
-static SINGLETON: AtomicBool = AtomicBool::new(false);
+static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug)]
 pub struct GlobalContext {
@@ -35,16 +35,51 @@ pub struct GlobalContext {
 
 impl GlobalContext {
     /// Creates a new `GlobalContext`.
-    pub fn new() -> Result<Self, ErrDontCare> {
-        if SINGLETON.compare_and_swap(false, true, Ordering::AcqRel) {
+    pub fn new(window: WindowBuilder) -> Result<Self, ErrDontCare> {
+        if INITIALIZED.compare_and_swap(false, true, Ordering::AcqRel) {
             panic!("Tried to initialize a second GlobalContext");
         }
 
-        let mut events_loop = glutin::EventsLoop::new();
-        let window = glutin::WindowBuilder::new();
-
-        let backend = Backend::initialize(window, events_loop)?;
+        let backend = Backend::initialize(window)?;
         Ok(Self { backend })
+    }
+
+    pub fn window_dimensions(&self) -> (u32, u32) {
+        self.backend.window_dimensions()
+    }
+
+    pub fn resize_window(&mut self, width: u32, height: u32) {
+        self.backend.resize_window(width, height)
+    }
+
+    fn prepare_texture_as_draw_target<'a>(
+        &mut self,
+        tex: &'a mut Texture,
+    ) -> Result<&'a mut RawTexture, ErrDontCare> {
+        if let Some(inner) = Rc::get_mut(&mut tex.inner) {
+            if !inner.is_framebuffer {
+                inner.add_framebuffer()?;
+            }
+        } else {
+            tex.inner = Rc::new(RawTexture::clone_as_target(&tex.inner, &mut self.backend)?);
+        };
+
+        Rc::get_mut(&mut tex.inner).ok_or_else(|| panic!("Rc::get_mut"))
+    }
+
+    pub fn clear_texture_depth(&mut self, texture: &mut Texture) -> Result<(), ErrDontCare> {
+        let target = self.prepare_texture_as_draw_target(texture)?;
+        self.backend.clear_texture_depth(target)
+    }
+
+    /// Overwrites every pixel of `texture` with `color`
+    pub fn clear_texture_color(
+        &mut self,
+        texture: &mut Texture,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        let target = self.prepare_texture_as_draw_target(texture)?;
+        self.backend.clear_texture_color(target, color)
     }
 
     /// Draws the `texture` on top of the `target`.
@@ -57,18 +92,7 @@ impl GlobalContext {
         position: (i32, i32),
         config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
-        let target = if let Some(inner) = Rc::get_mut(&mut target.inner) {
-            if !inner.is_framebuffer {
-                *inner = RawTexture::clone_as_target(inner, &mut self.backend)?;
-            }
-            inner
-        } else {
-            target.inner = Rc::new(RawTexture::clone_as_target(
-                &target.inner,
-                &mut self.backend,
-            )?);
-            Rc::get_mut(&mut target.inner).unwrap()
-        };
+        let target = self.prepare_texture_as_draw_target(target)?;
 
         self.backend.draw(
             target.frame_buffer_id,
@@ -90,6 +114,17 @@ impl GlobalContext {
     ) -> Result<(), ErrDontCare> {
         let dim = self.backend.window_dimensions();
         self.backend.draw(0, dim, &texture.inner, position, config)
+    }
+
+    /// Creates a new texture with the given `dimensions`.
+    ///
+    /// The content of the texture is undefined after its creation.
+    pub fn new_texture(&mut self, dimensions: (u32, u32)) -> Result<Texture, ErrDontCare> {
+        let raw = backend::tex::RawTexture::new(dimensions)?;
+
+        Ok(Texture {
+            inner: Rc::new(raw),
+        })
     }
 
     /// Loads a texture from an image located at `path`.
@@ -114,6 +149,12 @@ impl GlobalContext {
 #[derive(Debug, Clone)]
 pub struct Texture {
     inner: Rc<backend::tex::RawTexture>,
+}
+
+impl Texture {
+    pub fn dimensions(&self) -> (u32, u32) {
+        self.inner.dimensions
+    }
 }
 
 /// How exactly should a texture be drawn?
