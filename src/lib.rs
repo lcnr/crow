@@ -170,6 +170,8 @@ pub struct DrawConfig {
     pub depth: Option<f32>,
     /// Changes the color of the given pixel using matrix multiplication.
     pub color_modulation: [[f32; 4]; 4],
+    /// If the red, green and blue values of the texture should be inverted.
+    pub invert_colors: bool,
 }
 
 impl Default for DrawConfig {
@@ -183,6 +185,7 @@ impl Default for DrawConfig {
                 [0.0, 0.0, 1.0, 0.0],
                 [0.0, 0.0, 0.0, 1.0],
             ],
+            invert_colors: false,
         }
     }
 }

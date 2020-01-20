@@ -108,6 +108,7 @@ impl Program {
         Uniforms {
             object: self.get_uniform_id("object"),
             color_modulation: self.get_uniform_id("color_modulation"),
+            invert_color: self.get_uniform_id("invert_color"),
             target_dimensions: self.get_uniform_id("target_dimensions"),
             object_dimensions: self.get_uniform_id("object_dimensions"),
             object_position: self.get_uniform_id("object_position"),
@@ -129,6 +130,7 @@ impl Drop for Program {
 pub struct Uniforms {
     pub object: GLint,
     pub color_modulation: GLint,
+    pub invert_color: GLint,
     pub target_dimensions: GLint,
     pub object_dimensions: GLint,
     pub object_position: GLint,
