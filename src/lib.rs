@@ -7,6 +7,8 @@ use std::{
 
 use glutin::{EventsLoop, WindowBuilder};
 
+use image::RgbaImage;
+
 mod backend;
 pub mod color;
 
@@ -70,6 +72,65 @@ impl GlobalContext {
     pub fn clear_texture_depth(&mut self, texture: &mut Texture) -> Result<(), ErrDontCare> {
         let target = self.prepare_texture_as_draw_target(texture)?;
         self.backend.clear_texture_depth(target)
+    }
+
+    /// Stores the current state of the given `texture` in an image.
+    /// This function is fairly slow and should not be used carelessly.
+    pub fn get_texture_data(&self, texture: &Texture) -> RgbaImage {
+        let (width, height) = texture.dimensions();
+
+        // FIXME: this could theoretically overflow, leading to memory unsafety.
+        let byte_count = 4 * width as usize * height as usize;
+        let mut data: Vec<u8> = Vec::with_capacity(byte_count);
+
+        unsafe {
+            // FIXME: consider using glGetTextureImage even if it is only supported since OpenGL 4.5
+            gl::BindTexture(gl::TEXTURE_2D, texture.inner.id);
+            gl::GetTexImage(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                data.as_mut_ptr() as *mut _,
+            );
+            if gl::GetError() != gl::NO_ERROR {
+                panic!("failed to take a screenshot");
+            }
+            data.set_len(byte_count);
+        }
+
+        RgbaImage::from_vec(width, height, backend::tex::flip_image_data(data, width)).unwrap()
+    }
+
+    /// Stores the current state of the window in an image.
+    /// This function is fairly slow and should not be used carelessly.
+    ///
+    /// It is currently not possible to screenshot a part of the screen.
+    pub fn take_screenshot(&self) -> RgbaImage {
+        let (width, height) = self.window_dimensions();
+
+        // FIXME: this could theoretically overflow, leading to memory unsafety.
+        let byte_count = 4 * width as usize * height as usize;
+        let mut data: Vec<u8> = Vec::with_capacity(byte_count);
+
+        unsafe {
+            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+            gl::ReadPixels(
+                0,
+                0,
+                width as _,
+                height as _,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                data.as_mut_ptr() as *mut _,
+            );
+            if gl::GetError() != gl::NO_ERROR {
+                panic!("failed to take a screenshot");
+            }
+            data.set_len(byte_count);
+        }
+
+        RgbaImage::from_vec(width, height, backend::tex::flip_image_data(data, width)).unwrap()
     }
 
     /// Overwrites every pixel of `texture` with `color`
@@ -187,17 +248,5 @@ impl Default for DrawConfig {
             ],
             invert_colors: false,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[should_panic]
-    fn two_contexts() {
-        let _a = GlobalContext::new();
-        let _b = GlobalContext::new();
     }
 }

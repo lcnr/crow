@@ -11,6 +11,7 @@ should allow users to do nearly everything they want without requiring custom re
 - [x] color modulation
   - [x] gray scale
   - [x] invert colors
+- [x] implement screenshots + getting texture data
 - [ ] flip textures
 - [ ] subtextures (spritesheets)
 - [ ] different drawing modes
