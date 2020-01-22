@@ -223,6 +223,10 @@ impl Texture {
 pub struct DrawConfig {
     /// The scale of the drawn texture in pixels.
     pub scale: (u32, u32),
+    /// If the texture should be flipped on the y axis.
+    pub flip_vertically: bool,
+    /// If the texture should be flipped on the x axis.
+    pub flip_horizontally: bool,
     /// The depth at which the texture should be drawn,
     /// pixels with a depth smaller than `depth` will not
     /// be overwritten.
@@ -247,6 +251,8 @@ impl Default for DrawConfig {
                 [0.0, 0.0, 0.0, 1.0],
             ],
             invert_colors: false,
+            flip_vertically: false,
+            flip_horizontally: false,
         }
     }
 }

@@ -12,7 +12,7 @@ should allow users to do nearly everything they want without requiring custom re
   - [x] gray scale
   - [x] invert colors
 - [x] implement screenshots + getting texture data
-- [ ] flip textures
+- [x] flip textures
 - [ ] subtextures (spritesheets)
 - [ ] different drawing modes
 - [ ] actual error handling

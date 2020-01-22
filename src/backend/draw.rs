@@ -42,6 +42,14 @@ impl Backend {
                 &draw_config.color_modulation as *const _ as *const f32,
             );
             gl::Uniform1ui(self.uniforms.invert_color, draw_config.invert_colors as _);
+            gl::Uniform1ui(
+                self.uniforms.flip_vertically,
+                draw_config.flip_vertically as _,
+            );
+            gl::Uniform1ui(
+                self.uniforms.flip_horizontally,
+                draw_config.flip_horizontally as _,
+            );
 
             if let Some(depth) = draw_config.depth {
                 gl::Enable(gl::DEPTH_TEST);
