@@ -36,7 +36,13 @@ pub struct GlobalContext {
 }
 
 impl GlobalContext {
-    /// Creates a new `GlobalContext`.
+    /// Creates a new `GlobalContext`. It is not possible to have more
+    /// than one `GlobalContext` at a time.
+    ///
+    /// To create a new `GlobalContext` a previous context was used,
+    /// The previous context has to be dropped using the method
+    /// `GlobalContext::unlock_unchecked()`. This is a workaround and
+    /// will probably be fixed in a future release.
     pub fn new(window: WindowBuilder) -> Result<Self, ErrDontCare> {
         if INITIALIZED.compare_and_swap(false, true, Ordering::AcqRel) {
             panic!("Tried to initialize a second GlobalContext");
@@ -204,6 +210,17 @@ impl GlobalContext {
     /// Presents the current frame to the screen and prepares for the next frame.
     pub fn finalize_frame(&mut self) -> Result<(), ErrDontCare> {
         self.backend.finalize_frame()
+    }
+
+    /// Drops this context while allowing the initialization of a new one afterwards.
+    ///
+    /// # Safety
+    ///
+    /// This method may lead to undefined behavior if a struct, for example a `Texture`, which was created using
+    /// the current context, is used with the new context.
+    pub unsafe fn unlock_unchecked(self) {
+        // FIXME: Actually reason about the ordering. This should be correct afaik.
+        INITIALIZED.store(false, Ordering::Release);
     }
 }
 
