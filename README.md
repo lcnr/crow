@@ -14,6 +14,6 @@ should allow users to do nearly everything they want without requiring custom re
 - [x] implement screenshots + getting texture data
 - [x] flip textures
 - [ ] subtextures (spritesheets)
-- [ ] different drawing modes
+- [x] different drawing modes
 - [ ] actual error handling
 - [ ] custom renderer support
