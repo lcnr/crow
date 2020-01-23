@@ -2,7 +2,7 @@ use std::{path::Path, ptr};
 
 use gl::types::*;
 
-use crate::{backend::Backend, ErrDontCare, Texture};
+use crate::{backend::Backend, ErrDontCare};
 
 pub fn flip_image_data(data: Vec<u8>, width: u32) -> Vec<u8> {
     data.chunks(width as usize * 4)

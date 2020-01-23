@@ -235,7 +235,43 @@ impl Texture {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
+pub enum BlendMode {
+    /// `src_alpha * src_color + (1.0 - src_alpha) * dst_color`
+    Alpha,
+    /// `src_alpha * src_color + 1.0 * dst_color`
+    Additive,
+}
+
+impl Default for BlendMode {
+    fn default() -> Self {
+        BlendMode::Alpha
+    }
+}
+
 /// How exactly should a texture be drawn?
+///
+/// This struct has a hidden unstable field, so it can only be constructed using FRU.
+///
+/// # Examples
+///
+/// ```rust
+/// # #[allow(unused_variable)]
+/// use crow::{DrawConfig, color};
+///
+/// let gray_scale = DrawConfig {
+///     color_modulation: color::GREYSCALE,
+///     ..Default::default()
+/// };
+///
+/// let strange = DrawConfig {
+///     scale: (2, 1),
+///     flip_horizontally: true,
+///     depth: Some(0.6),
+///     ..Default::default()
+/// };
+/// ```
 #[derive(Debug, Clone)]
 pub struct DrawConfig {
     /// The scale of the drawn texture in pixels.
@@ -252,8 +288,13 @@ pub struct DrawConfig {
     pub depth: Option<f32>,
     /// Changes the color of the given pixel using matrix multiplication.
     pub color_modulation: [[f32; 4]; 4],
-    /// If the red, green and blue values of the texture should be inverted.
+    /// If the red, green and blue color values of the texture should be inverted.
     pub invert_colors: bool,
+    /// How the texture should be drawn on the target.
+    pub blend_mode: BlendMode,
+    // `#[non_exhaustive]` forbids FRU, so we use a hidden field instead,
+    #[doc(hidden)]
+    pub __non_exhaustive: (),
 }
 
 impl Default for DrawConfig {
@@ -270,6 +311,8 @@ impl Default for DrawConfig {
             invert_colors: false,
             flip_vertically: false,
             flip_horizontally: false,
+            blend_mode: Default::default(),
+            __non_exhaustive: (),
         }
     }
 }

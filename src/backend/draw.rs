@@ -2,7 +2,7 @@ use gl::types::*;
 
 use crate::{
     backend::{tex::RawTexture, Backend},
-    DrawConfig, ErrDontCare,
+    BlendMode, DrawConfig, ErrDontCare,
 };
 
 impl Backend {
@@ -56,6 +56,11 @@ impl Backend {
                 gl::Uniform1f(self.uniforms.depth, depth);
             } else {
                 gl::Disable(gl::DEPTH_TEST);
+            }
+
+            match draw_config.blend_mode {
+                BlendMode::Alpha => gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA),
+                BlendMode::Additive => gl::BlendFunc(gl::SRC_ALPHA, gl::ONE),
             }
 
             gl::BindTexture(gl::TEXTURE_2D, object_texture.id);
