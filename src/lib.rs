@@ -75,39 +75,6 @@ impl GlobalContext {
         Rc::get_mut(&mut tex.inner).ok_or_else(|| panic!("Rc::get_mut"))
     }
 
-    pub fn clear_texture_depth(&mut self, texture: &mut Texture) -> Result<(), ErrDontCare> {
-        let target = self.prepare_texture_as_draw_target(texture)?;
-        self.backend.clear_texture_depth(target)
-    }
-
-    /// Stores the current state of the given `texture` in an image.
-    /// This function is fairly slow and should not be used carelessly.
-    pub fn get_texture_data(&self, texture: &Texture) -> RgbaImage {
-        let (width, height) = texture.dimensions();
-
-        // FIXME: this could theoretically overflow, leading to memory unsafety.
-        let byte_count = 4 * width as usize * height as usize;
-        let mut data: Vec<u8> = Vec::with_capacity(byte_count);
-
-        unsafe {
-            // FIXME: consider using glGetTextureImage even if it is only supported since OpenGL 4.5
-            gl::BindTexture(gl::TEXTURE_2D, texture.inner.id);
-            gl::GetTexImage(
-                gl::TEXTURE_2D,
-                0,
-                gl::RGBA,
-                gl::UNSIGNED_BYTE,
-                data.as_mut_ptr() as *mut _,
-            );
-            if gl::GetError() != gl::NO_ERROR {
-                panic!("failed to take a screenshot");
-            }
-            data.set_len(byte_count);
-        }
-
-        RgbaImage::from_vec(width, height, backend::tex::flip_image_data(data, width)).unwrap()
-    }
-
     /// Stores the current state of the window in an image.
     /// This function is fairly slow and should not be used carelessly.
     ///
@@ -139,70 +106,6 @@ impl GlobalContext {
         RgbaImage::from_vec(width, height, backend::tex::flip_image_data(data, width)).unwrap()
     }
 
-    /// Overwrites every pixel of `texture` with `color`
-    pub fn clear_texture_color(
-        &mut self,
-        texture: &mut Texture,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
-        let target = self.prepare_texture_as_draw_target(texture)?;
-        self.backend.clear_texture_color(target, color)
-    }
-
-    /// Draws the `texture` on top of the `target`.
-    /// This permanently alters the `target`, in case
-    /// the original is still required, consider cloning the target first.
-    pub fn draw_to_texture(
-        &mut self,
-        target: &mut Texture,
-        texture: &Texture,
-        position: (i32, i32),
-        config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
-        let target = self.prepare_texture_as_draw_target(target)?;
-
-        self.backend.draw(
-            target.frame_buffer_id,
-            target.dimensions,
-            &texture.inner,
-            position,
-            config,
-        )
-    }
-
-    /// Directly draws the `texture` to the screen at the specified `position`.
-    /// For this to be shown on screen, it is required to call
-    /// `finalize_frame`.
-    pub fn draw(
-        &mut self,
-        texture: &Texture,
-        position: (i32, i32),
-        config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
-        let dim = self.backend.window_dimensions();
-        self.backend.draw(0, dim, &texture.inner, position, config)
-    }
-
-    /// Creates a new texture with the given `dimensions`.
-    ///
-    /// The content of the texture is undefined after its creation.
-    pub fn new_texture(&mut self, dimensions: (u32, u32)) -> Result<Texture, ErrDontCare> {
-        let raw = backend::tex::RawTexture::new(dimensions)?;
-
-        Ok(Texture {
-            inner: Rc::new(raw),
-        })
-    }
-
-    /// Loads a texture from an image located at `path`.
-    pub fn load_texture<P: AsRef<Path>>(&mut self, path: P) -> Result<Texture, ErrDontCare> {
-        let raw = backend::tex::RawTexture::load(path)?;
-
-        Ok(Texture {
-            inner: Rc::new(raw),
-        })
-    }
-
     pub fn events_loop(&mut self) -> &mut EventsLoop {
         self.backend.events_loop()
     }
@@ -224,17 +127,129 @@ impl GlobalContext {
     }
 }
 
+/// A two dimensional texture stored in video memory.
+///
+/// `Texture`s are copy-on-write, so cloning a texture is cheap
+/// until the clone or the original is modified.
+///
+/// Transparency is supported.
 #[derive(Debug, Clone)]
 pub struct Texture {
     inner: Rc<backend::tex::RawTexture>,
 }
 
 impl Texture {
+    /// Creates a new texture with the given `dimensions`.
+    ///
+    /// The content of the texture is undefined after its creation.
+    pub fn new(ctx: &mut GlobalContext, dimensions: (u32, u32)) -> Result<Self, ErrDontCare> {
+        // ctx is only needed for safety
+        let _ = ctx;
+        let raw = backend::tex::RawTexture::new(dimensions)?;
+
+        Ok(Texture {
+            inner: Rc::new(raw),
+        })
+    }
+
+    /// Loads a texture from an image located at `path`.
+    pub fn load<P: AsRef<Path>>(ctx: &mut GlobalContext, path: P) -> Result<Texture, ErrDontCare> {
+        // ctx is only needed for safety
+        let _ = ctx;
+
+        let raw = backend::tex::RawTexture::load(path)?;
+
+        Ok(Texture {
+            inner: Rc::new(raw),
+        })
+    }
+
     pub fn dimensions(&self) -> (u32, u32) {
         self.inner.dimensions
     }
+
+    /// Directly draws `self` to the screen buffer at the specified `position`.
+    /// For this to be shown on screen, it is required to call `finalize_frame`.
+    pub fn draw(
+        &self,
+        ctx: &mut GlobalContext,
+        position: (i32, i32),
+        config: &DrawConfig,
+    ) -> Result<(), ErrDontCare> {
+        let dim = ctx.backend.window_dimensions();
+        ctx.backend.draw(0, dim, &self.inner, position, config)
+    }
+
+    /// Stores the current state of this `Texture` in an image.
+    /// This function is fairly slow and should not be used carelessly.
+    pub fn get_image_data(&self, ctx: &GlobalContext) -> RgbaImage {
+        let _ = ctx;
+        let (width, height) = self.dimensions();
+
+        // FIXME: this could theoretically overflow, leading to memory unsafety.
+        let byte_count = 4 * width as usize * height as usize;
+        let mut data: Vec<u8> = Vec::with_capacity(byte_count);
+
+        unsafe {
+            // FIXME: consider using glGetTextureImage even if it is only supported since OpenGL 4.5
+            gl::BindTexture(gl::TEXTURE_2D, self.inner.id);
+            gl::GetTexImage(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                data.as_mut_ptr() as *mut _,
+            );
+            if gl::GetError() != gl::NO_ERROR {
+                panic!("failed to take a screenshot");
+            }
+            data.set_len(byte_count);
+        }
+
+        RgbaImage::from_vec(width, height, backend::tex::flip_image_data(data, width)).unwrap()
+    }
+
+    /// Draws the `self` onto `target`.
+    /// This permanently alters the `target`, in case
+    /// the original `target` is still required,
+    /// consider cloning the target first.
+    pub fn draw_to_texture(
+        &self,
+        ctx: &mut GlobalContext,
+        target: &mut Texture,
+        position: (i32, i32),
+        config: &DrawConfig,
+    ) -> Result<(), ErrDontCare> {
+        let target = ctx.prepare_texture_as_draw_target(target)?;
+
+        ctx.backend.draw(
+            target.frame_buffer_id,
+            target.dimensions,
+            &self.inner,
+            position,
+            config,
+        )
+    }
+
+    /// Overwrites every pixel of `self` with the specified `color`
+    pub fn clear_color(
+        &mut self,
+        ctx: &mut GlobalContext,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        let target = ctx.prepare_texture_as_draw_target(self)?;
+        ctx.backend.clear_texture_color(target, color)
+    }
+
+    /// Resets the depth buffer to `1.0` for every pixel.
+    pub fn clear_depth(&mut self, ctx: &mut GlobalContext) -> Result<(), ErrDontCare> {
+        let target = ctx.prepare_texture_as_draw_target(self)?;
+        ctx.backend.clear_texture_depth(target)
+    }
 }
 
+/// Used in `DrawConfig` to specify how
+/// each pixel should be draw onto the target.
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum BlendMode {

@@ -1,6 +1,6 @@
 use std::{
     ffi::{self, CStr, CString},
-    mem, ptr, slice, str,
+    mem, ptr, slice,
 };
 
 use gl::types::*;
@@ -14,7 +14,13 @@ pub(crate) mod tex;
 
 use shader::{Program, Uniforms};
 
-static VERTEX_DATA: [GLfloat; 8] = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
+#[rustfmt::skip]
+static VERTEX_DATA: [GLfloat; 8] = [
+    0.0, 0.0,
+    1.0, 0.0,
+    1.0, 1.0,
+    0.0, 1.0
+];
 
 extern "system" fn debug_callback(
     source: GLenum,

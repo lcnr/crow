@@ -1,8 +1,6 @@
+use std::{ffi::CString, ptr, str};
+
 use gl::types::*;
-use std::ffi::CString;
-use std::mem;
-use std::ptr;
-use std::str;
 
 use crate::ErrDontCare;
 

@@ -4,21 +4,18 @@ use glutin::{
     ControlFlow, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowBuilder, WindowEvent,
 };
 
-use crow::{color, BlendMode, DrawConfig, GlobalContext};
+use crow::{color, BlendMode, DrawConfig, ErrDontCare, GlobalContext, Texture};
 
-fn main() {
-    let mut context = crow::GlobalContext::new(WindowBuilder::new()).unwrap();
+fn inner() -> Result<(), ErrDontCare> {
+    let mut context = GlobalContext::new(WindowBuilder::new())?;
 
-    let texture = context
-        .load_texture("./examples/textures/player.png")
-        .unwrap();
+    let texture = Texture::load(&mut context, "./examples/textures/player.png")?;
 
-    let mut target_texture = context.new_texture((100, 100)).unwrap();
+    let mut target_texture = Texture::new(&mut context, (100, 100))?;
 
     let mut fin = false;
-    let mut offset;
+    let mut offset = 0;
     loop {
-        offset = 0;
         context.events_loop().poll_events(|event| match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => fin = true,
@@ -27,6 +24,10 @@ fn main() {
                         && input.virtual_keycode == Some(VirtualKeyCode::Space)
                     {
                         offset = 1;
+                    } else if input.state == ElementState::Released
+                        && input.virtual_keycode == Some(VirtualKeyCode::Space)
+                    {
+                        offset = 0;
                     }
                 }
                 _ => (),
@@ -34,26 +35,22 @@ fn main() {
             _ => (),
         });
 
-        context
-            .clear_texture_color(&mut target_texture, (0.0, 0.0, 0.0, 0.0))
-            .unwrap();
+        target_texture.clear_color(&mut context, (0.0, 0.0, 0.0, 0.0));
 
-        context
+        texture.draw_to_texture(
+            &mut context,
+            &mut target_texture,
+            (0 - offset, 0 + offset),
+            &DrawConfig {
+                blend_mode: BlendMode::Additive,
+                color_modulation: color::RED,
+                ..Default::default()
+            },
+        )?;
+        texture
             .draw_to_texture(
+                &mut context,
                 &mut target_texture,
-                &texture,
-                (0 - offset, 0 + offset),
-                &DrawConfig {
-                    blend_mode: BlendMode::Additive,
-                    color_modulation: color::RED,
-                    ..Default::default()
-                },
-            )
-            .unwrap();
-        context
-            .draw_to_texture(
-                &mut target_texture,
-                &texture,
                 (0, 0),
                 &DrawConfig {
                     blend_mode: BlendMode::Additive,
@@ -62,10 +59,10 @@ fn main() {
                 },
             )
             .unwrap();
-        context
+        texture
             .draw_to_texture(
+                &mut context,
                 &mut target_texture,
-                &texture,
                 (0 + offset, 0 - offset),
                 &DrawConfig {
                     blend_mode: BlendMode::Additive,
@@ -75,9 +72,9 @@ fn main() {
             )
             .unwrap();
 
-        context
+        target_texture
             .draw(
-                &target_texture,
+                &mut context,
                 (100, 100),
                 &DrawConfig {
                     scale: (4, 4),
@@ -93,4 +90,10 @@ fn main() {
             break;
         }
     }
+
+    Ok(())
+}
+
+fn main() {
+    inner().unwrap();
 }
