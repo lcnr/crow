@@ -35,7 +35,7 @@ fn inner() -> Result<(), ErrDontCare> {
             _ => (),
         });
 
-        target_texture.clear_color(&mut context, (0.0, 0.0, 0.0, 0.0));
+        target_texture.clear_color(&mut context, (0.0, 0.0, 0.0, 0.0))?;
 
         texture.draw_to_texture(
             &mut context,
