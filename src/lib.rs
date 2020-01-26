@@ -12,6 +12,8 @@ use image::RgbaImage;
 mod backend;
 pub mod color;
 
+pub use glutin;
+
 use backend::{tex::RawTexture, Backend};
 
 /// An error in cases where dealing with errors is hard.
@@ -69,8 +71,10 @@ impl GlobalContext {
             inner.add_framebuffer()?;
             self.backend.draw(
                 inner.frame_buffer_id,
-                inner.dimensions,
+                tex.size,
                 &tex.inner,
+                tex.position,
+                tex.size,
                 (0, 0),
                 &Default::default(),
             )?;
@@ -222,7 +226,15 @@ impl Texture {
         config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
         let dim = ctx.backend.window_dimensions();
-        ctx.backend.draw(0, dim, &self.inner, position, config)
+        ctx.backend.draw(
+            0,
+            dim,
+            &self.inner,
+            self.position,
+            self.size,
+            position,
+            config,
+        )
     }
 
     /// Stores the current state of this `Texture` in an image.
@@ -288,6 +300,8 @@ impl Texture {
             target.frame_buffer_id,
             target.dimensions,
             &self.inner,
+            self.position,
+            self.size,
             position,
             config,
         )

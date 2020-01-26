@@ -11,6 +11,8 @@ impl Backend {
         target_framebuffer: GLuint,
         target_dimensions: (u32, u32),
         object_texture: &RawTexture,
+        object_texture_offset: (u32, u32),
+        object_dimensions: (u32, u32),
         object_position: (i32, i32),
         draw_config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
@@ -21,9 +23,19 @@ impl Backend {
                 target_dimensions.1,
             );
             gl::Uniform2ui(
-                self.uniforms.object_dimensions,
+                self.uniforms.object_texture_dimensions,
                 object_texture.dimensions.0,
                 object_texture.dimensions.1,
+            );
+            gl::Uniform2ui(
+                self.uniforms.object_texture_offset,
+                object_texture_offset.0,
+                object_texture_offset.1,
+            );
+            gl::Uniform2ui(
+                self.uniforms.object_dimensions,
+                object_dimensions.0,
+                object_dimensions.1,
             );
             gl::Uniform2i(
                 self.uniforms.object_position,

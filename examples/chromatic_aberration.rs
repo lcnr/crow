@@ -1,10 +1,10 @@
 use std::{thread, time::Duration};
 
-use glutin::{
-    ControlFlow, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowBuilder, WindowEvent,
+use crow::{
+    color,
+    glutin::{ElementState, Event, VirtualKeyCode, WindowBuilder, WindowEvent},
+    BlendMode, DrawConfig, ErrDontCare, GlobalContext, Texture,
 };
-
-use crow::{color, BlendMode, DrawConfig, ErrDontCare, GlobalContext, Texture};
 
 fn inner() -> Result<(), ErrDontCare> {
     let mut context = GlobalContext::new(WindowBuilder::new())?;

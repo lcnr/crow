@@ -165,6 +165,8 @@ impl RawTexture {
             previous.dimensions,
             previous,
             (0, 0),
+            previous.dimensions,
+            (0, 0),
             &Default::default(),
         )?;
         unsafe {

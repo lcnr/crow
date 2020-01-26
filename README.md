@@ -13,7 +13,8 @@ should allow users to do nearly everything they want without requiring custom re
   - [x] invert colors
 - [x] implement screenshots + getting texture data
 - [x] flip textures
-- [ ] subtextures (spritesheets)
+- [x] subtextures (spritesheets)
+- [ ] flip textures diagonally
 - [x] different drawing modes
 - [ ] actual error handling
 - [ ] custom renderer support
