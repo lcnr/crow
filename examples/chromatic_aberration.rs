@@ -9,7 +9,7 @@ use crow::{color, BlendMode, DrawConfig, ErrDontCare, GlobalContext, Texture};
 fn inner() -> Result<(), ErrDontCare> {
     let mut context = GlobalContext::new(WindowBuilder::new())?;
 
-    let texture = Texture::load(&mut context, "./examples/textures/player.png")?;
+    let texture = Texture::load(&mut context, "./textures/player.png")?;
 
     let mut target_texture = Texture::new(&mut context, (100, 100))?;
 

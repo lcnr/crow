@@ -64,13 +64,27 @@ impl GlobalContext {
         &mut self,
         tex: &'a mut Texture,
     ) -> Result<&'a mut RawTexture, ErrDontCare> {
-        if let Some(inner) = Rc::get_mut(&mut tex.inner) {
-            if !inner.is_framebuffer {
-                inner.add_framebuffer()?;
-            }
+        if tex.position != (0, 0) || tex.size != tex.inner.dimensions {
+            let mut inner = RawTexture::new(tex.size)?;
+            inner.add_framebuffer()?;
+            self.backend.draw(
+                inner.frame_buffer_id,
+                inner.dimensions,
+                &tex.inner,
+                (0, 0),
+                &Default::default(),
+            )?;
+
+            tex.inner = Rc::new(inner);
         } else {
-            tex.inner = Rc::new(RawTexture::clone_as_target(&tex.inner, &mut self.backend)?);
-        };
+            if let Some(inner) = Rc::get_mut(&mut tex.inner) {
+                if !inner.is_framebuffer {
+                    inner.add_framebuffer()?;
+                }
+            } else {
+                tex.inner = Rc::new(RawTexture::clone_as_target(&tex.inner, &mut self.backend)?);
+            }
+        }
 
         Rc::get_mut(&mut tex.inner).ok_or_else(|| panic!("Rc::get_mut"))
     }
@@ -103,7 +117,14 @@ impl GlobalContext {
             data.set_len(byte_count);
         }
 
-        RgbaImage::from_vec(width, height, backend::tex::flip_image_data(data, width)).unwrap()
+        let reversed_data = data
+            .chunks(width as usize * 4)
+            .rev()
+            .flat_map(|row| row.iter())
+            .map(|p| p.clone())
+            .collect();
+
+        RgbaImage::from_vec(width, height, reversed_data).unwrap()
     }
 
     pub fn events_loop(&mut self) -> &mut EventsLoop {
@@ -136,6 +157,8 @@ impl GlobalContext {
 #[derive(Debug, Clone)]
 pub struct Texture {
     inner: Rc<backend::tex::RawTexture>,
+    position: (u32, u32),
+    size: (u32, u32),
 }
 
 impl Texture {
@@ -149,6 +172,8 @@ impl Texture {
 
         Ok(Texture {
             inner: Rc::new(raw),
+            position: (0, 0),
+            size: dimensions,
         })
     }
 
@@ -159,9 +184,29 @@ impl Texture {
 
         let raw = backend::tex::RawTexture::load(path)?;
 
+        let size = raw.dimensions;
+
         Ok(Texture {
             inner: Rc::new(raw),
+            position: (0, 0),
+            size,
         })
+    }
+
+    /// Returns the part of `self` specified by `position` and `size` as a `Texture`.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if part of the requested section would be outside of the original texture.
+    pub fn get_section(&self, position: (u32, u32), size: (u32, u32)) -> Texture {
+        assert!(position.0 + size.0 <= self.size.0);
+        assert!(position.1 + size.1 <= self.size.1);
+
+        Texture {
+            inner: self.inner.clone(),
+            position: (self.position.0 + position.0, self.position.1 + position.1),
+            size,
+        }
     }
 
     pub fn dimensions(&self) -> (u32, u32) {
@@ -184,7 +229,7 @@ impl Texture {
     /// This function is fairly slow and should not be used carelessly.
     pub fn get_image_data(&self, ctx: &GlobalContext) -> RgbaImage {
         let _ = ctx;
-        let (width, height) = self.dimensions();
+        let (width, height) = self.inner.dimensions;
 
         // FIXME: this could theoretically overflow, leading to memory unsafety.
         let byte_count = 4 * width as usize * height as usize;
@@ -206,7 +251,24 @@ impl Texture {
             data.set_len(byte_count);
         }
 
-        RgbaImage::from_vec(width, height, backend::tex::flip_image_data(data, width)).unwrap()
+        let skip_above = height - (self.position.1 + self.size.1);
+        let skip_vertical = self.position.0 * 4;
+        let take_vertical = self.size.0 * 4;
+
+        let image_data = data
+            .chunks(width as usize * 4)
+            .skip(skip_above as usize)
+            .rev()
+            .skip(self.position.1 as usize)
+            .flat_map(|row| {
+                row.iter()
+                    .skip(skip_vertical as usize)
+                    .take(take_vertical as usize)
+            })
+            .map(|p| p.clone())
+            .collect();
+
+        RgbaImage::from_vec(self.size.0, self.size.1, image_data).unwrap()
     }
 
     /// Draws the `self` onto `target`.

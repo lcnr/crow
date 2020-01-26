@@ -4,14 +4,6 @@ use gl::types::*;
 
 use crate::{backend::Backend, ErrDontCare};
 
-pub fn flip_image_data(data: Vec<u8>, width: u32) -> Vec<u8> {
-    data.chunks(width as usize * 4)
-        .rev()
-        .flat_map(|row| row.iter())
-        .map(|p| p.clone())
-        .collect()
-}
-
 #[derive(Debug)]
 pub struct RawTexture {
     pub id: GLuint,
@@ -78,7 +70,13 @@ impl RawTexture {
 
         // open gl presents images upside down,
         // we therefore flip it to get the desired output.
-        let reversed_data = flip_image_data(image.into_raw(), image_dimensions.0);
+        let reversed_data: Vec<u8> = image
+            .into_raw()
+            .chunks(image_dimensions.0 as usize * 4)
+            .rev()
+            .flat_map(|row| row.iter())
+            .map(|p| p.clone())
+            .collect();
 
         unsafe {
             let mut id = 0;

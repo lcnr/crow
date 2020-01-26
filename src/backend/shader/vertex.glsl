@@ -2,6 +2,7 @@
 in vec2 position;
 
 out vec2 tex_coords;
+out vec2 object_size;
 
 uniform uvec2 target_dimensions;
 uniform uvec2 object_dimensions;
@@ -11,6 +12,7 @@ uniform float depth;
 
 void main() {
     tex_coords = position;
+    object_size = object_dimensions;
     
     vec2 target_pos = vec2(
         (position.x * float(object_scale.x) / float(target_dimensions.x) * float(object_dimensions.x) + float(object_position.x) / float(target_dimensions.x)) * 2.0 - 1.0,

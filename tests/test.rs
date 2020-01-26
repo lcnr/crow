@@ -1,8 +1,10 @@
-use std::ops::{Deref, AddAssign};
+use std::ops::{Deref};
 
 use glutin::WindowBuilder;
 
 use image::RgbaImage;
+
+use rand::prelude::*;
 
 use crow::{ErrDontCare, GlobalContext, Texture, DrawConfig};
 
@@ -21,7 +23,14 @@ pub fn test(name: &str, f: fn(&mut GlobalContext) -> Result<RgbaImage, ErrDontCa
         ctx.unlock_unchecked();
     }
 
-    if actual_image.deref() != image::open(format!("tests/expected/{}.png", name)).unwrap().to_rgba().deref() {
+    let expected = if let Ok(image) = image::open(format!("tests/expected/{}.png", name)) {
+        image.to_rgba()
+    } else {
+        eprintln!("TEST FAILED (expected image not found): {}", name);
+        return Err(())
+    };
+
+    if actual_image.deref() != expected.deref() {
         eprintln!("TEST FAILED (invalid return image): {}", name);
         actual_image.save(format!("tests/actual/{}.png", name)).unwrap();
         Err(())
@@ -58,24 +67,62 @@ fn color_modulation(ctx: &mut GlobalContext) -> Result<RgbaImage, ErrDontCare> {
     Ok(a.get_image_data(&ctx))
 }
 
-struct TestCounter(u32, u32);
+fn flip_vertically(ctx: &mut GlobalContext) -> Result<RgbaImage, ErrDontCare> {
+    let big = Texture::new(ctx, (48, 16))?;
+    let mut a = big.get_section((0, 0), (16, 16));
+    let mut b = big.get_section((16, 0), (16, 16));
+    let mut c = big.get_section((32, 0), (16, 16));
 
-impl AddAssign<Result<(), ()>> for TestCounter {
-    fn add_assign(&mut self, rhs: Result<(), ()>) {
-        self.1 += 1;
-        if rhs.is_ok() {
-            self.0 += 1;
+    a.clear_color(ctx, (1.0, 0.0, 0.0, 1.0))?;
+    b.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+    c.clear_color(ctx, (0.0, 0.0, 1.0, 1.0))?;
+
+    b.draw_to_texture(ctx, &mut c, (0, 8), &DrawConfig::default())?;
+    c.draw_to_texture(ctx, &mut a, (8, 0), &DrawConfig {
+        flip_vertically: true,
+        ..Default::default()
+    })?;
+
+    Ok(a.get_image_data(&ctx))
+}
+
+#[derive(Default)]
+struct TestRunner(Vec<(&'static str, fn(&mut GlobalContext) -> Result<RgbaImage, ErrDontCare>)>);
+
+impl TestRunner {
+    fn add(&mut self, name: &'static str, f: fn(&mut GlobalContext) -> Result<RgbaImage, ErrDontCare>) {
+        self.0.push((name, f))
+    }
+
+    fn run(mut  self) -> i32 {
+        // randomize test order
+        self.0.shuffle(&mut rand::thread_rng());
+        
+        let mut success = 0;
+        let mut failure = 0;
+
+        for (name, f) in self.0 {
+            match test(name, f) {
+                Ok(()) => success += 1,
+                Err(()) => failure += 1,
+            }
+        }
+
+        if failure > 0 {
+            println!("RUN FAILED: total: {}, success: {}, failure: {}", success + failure, success, failure);
+            1
+        } else {
+            println!("RUN SUCCESS: total: {}, success: {}, failure: {}", success + failure, success, failure);
+            0
         }
     }
 }
 
-#[test]
-fn test_runner() {
-    let mut counter = TestCounter(0, 0);
-    counter += test("simple", simple);
-    counter += test("color_modulation", color_modulation);
+fn main() {
+    let mut runner = TestRunner::default();
+    runner.add("simple", simple);
+    runner.add("color_modulation", color_modulation);
+    runner.add("flip_vertically", flip_vertically);
 
-    if counter.0 != counter.1 {
-        panic!("RUN FAILED: total: {}, success: {}, failure: {}", counter.1, counter.0, counter.1 - counter.0);
-    }
+    std::process::exit(runner.run())
 }

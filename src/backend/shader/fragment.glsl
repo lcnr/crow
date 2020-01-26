@@ -1,6 +1,7 @@
 #version 330
 
 in vec2 tex_coords;
+in vec2 object_size;
 out vec4 color;
 
 uniform mat4 color_modulation;
