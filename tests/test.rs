@@ -57,7 +57,7 @@ fn simple(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     ctx.clear_color(&mut b, (0.0, 1.0, 0.0, 1.0))?;
     ctx.draw(&mut a, &b, (16, 16), &DrawConfig::default())?;
 
-    Ok(a.get_image_data(&ctx))
+    Ok(a.get_image_data(ctx))
 }
 
 fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
@@ -80,7 +80,7 @@ fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
         },
     )?;
 
-    Ok(a.get_image_data(&ctx))
+    Ok(a.get_image_data(ctx))
 }
 
 fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
@@ -104,7 +104,7 @@ fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
         },
     )?;
 
-    Ok(a.get_image_data(&ctx))
+    Ok(a.get_image_data(ctx))
 }
 
 fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
@@ -116,7 +116,7 @@ fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
 
     ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default())?;
 
-    Ok(target.get_image_data(&ctx))
+    Ok(target.get_image_data(ctx))
 }
 
 fn section_offset(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
@@ -133,7 +133,7 @@ fn section_offset(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
         &DrawConfig::default(),
     )?;
 
-    Ok(target.get_image_data(&ctx))
+    Ok(target.get_image_data(ctx))
 }
 
 fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
@@ -154,7 +154,7 @@ fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
         },
     )?;
 
-    Ok(target.get_image_data(&ctx))
+    Ok(target.get_image_data(ctx))
 }
 
 fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
@@ -175,7 +175,7 @@ fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
         },
     )?;
 
-    Ok(target.get_image_data(&ctx))
+    Ok(target.get_image_data(ctx))
 }
 
 fn zero_section(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
@@ -187,7 +187,7 @@ fn zero_section(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
 
     ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default())?;
 
-    Ok(target.get_image_data(&ctx))
+    Ok(target.get_image_data(ctx))
 }
 
 #[derive(Default)]

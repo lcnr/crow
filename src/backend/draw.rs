@@ -2,7 +2,7 @@ use gl::types::*;
 
 use crate::{
     backend::{tex::RawTexture, Backend},
-    BlendMode, DrawConfig, ErrDontCare,
+    DrawConfig, ErrDontCare,
 };
 
 impl Backend {
@@ -18,11 +18,6 @@ impl Backend {
         draw_config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
         unsafe {
-            gl::Uniform2ui(
-                self.uniforms.target_dimensions,
-                target_dimensions.0,
-                target_dimensions.1,
-            );
             gl::Uniform2ui(
                 self.uniforms.object_texture_dimensions,
                 object_texture.dimensions.0,
@@ -64,21 +59,11 @@ impl Backend {
                 draw_config.flip_horizontally as _,
             );
 
-            if let Some(depth) = draw_config.depth {
-                gl::Enable(gl::DEPTH_TEST);
-                gl::Uniform1f(self.uniforms.depth, depth);
-            } else {
-                gl::Disable(gl::DEPTH_TEST);
-            }
-
-            match draw_config.blend_mode {
-                BlendMode::Alpha => gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA),
-                BlendMode::Additive => gl::BlendFunc(gl::SRC_ALPHA, gl::ONE),
-            }
-
-            gl::BindTexture(gl::TEXTURE_2D, object_texture.id);
-            gl::BindFramebuffer(gl::FRAMEBUFFER, target_framebuffer);
-            gl::Viewport(0, 0, target_dimensions.0 as _, target_dimensions.1 as _);
+            self.state.update_target_dimensions(target_dimensions);
+            self.state.update_blend_mode(draw_config.blend_mode);
+            self.state.update_depth(draw_config.depth);
+            self.state.update_framebuffer(target_framebuffer);
+            self.state.update_texture(object_texture.id);
             gl::DrawArrays(gl::TRIANGLE_FAN, 0, 4);
         }
 

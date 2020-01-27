@@ -159,29 +159,10 @@ impl Context {
     /// This function is fairly slow and should not be used carelessly.
     ///
     /// It is currently not possible to screenshot a part of the screen.
-    pub fn take_screenshot(&self) -> RgbaImage {
+    pub fn take_screenshot(&mut self) -> RgbaImage {
         let (width, height) = self.window_dimensions();
 
-        // FIXME: this could theoretically overflow, leading to memory unsafety.
-        let byte_count = 4 * width as usize * height as usize;
-        let mut data: Vec<u8> = Vec::with_capacity(byte_count);
-
-        unsafe {
-            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
-            gl::ReadPixels(
-                0,
-                0,
-                width as _,
-                height as _,
-                gl::RGBA,
-                gl::UNSIGNED_BYTE,
-                data.as_mut_ptr() as *mut _,
-            );
-            if gl::GetError() != gl::NO_ERROR {
-                panic!("failed to take a screenshot");
-            }
-            data.set_len(byte_count);
-        }
+        let data = self.backend.take_screenshot((width, height));
 
         let reversed_data = data
             .chunks(width as usize * 4)
@@ -262,7 +243,7 @@ impl DrawTarget for WindowSurface {
 /// Transparency is supported.
 #[derive(Debug, Clone)]
 pub struct Texture {
-    inner: Rc<backend::tex::RawTexture>,
+    inner: Rc<RawTexture>,
     position: (u32, u32),
     size: (u32, u32),
 }
@@ -274,9 +255,7 @@ impl Texture {
     ///
     /// The content of the texture is undefined after its creation.
     pub fn new(ctx: &mut Context, dimensions: (u32, u32)) -> Result<Self, ErrDontCare> {
-        // ctx is only needed for safety
-        let _ = ctx;
-        let raw = backend::tex::RawTexture::new(dimensions)?;
+        let raw = RawTexture::new(&mut ctx.backend, dimensions)?;
 
         Ok(Texture {
             inner: Rc::new(raw),
@@ -287,10 +266,7 @@ impl Texture {
 
     /// Loads a texture from an image located at `path`.
     pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, ErrDontCare> {
-        // ctx is only needed for safety
-        let _ = ctx;
-
-        let raw = backend::tex::RawTexture::load(path)?;
+        let raw = RawTexture::load(&mut ctx.backend, path)?;
 
         let size = raw.dimensions;
 
@@ -334,8 +310,8 @@ impl Texture {
         ctx: &mut Context,
     ) -> Result<&'a mut RawTexture, ErrDontCare> {
         if self.position != (0, 0) || self.size != self.inner.dimensions {
-            let mut inner = RawTexture::new(self.size)?;
-            inner.add_framebuffer()?;
+            let mut inner = RawTexture::new(&mut ctx.backend, self.size)?;
+            inner.add_framebuffer(&mut ctx.backend)?;
             ctx.backend.draw(
                 inner.frame_buffer_id,
                 self.size,
@@ -349,7 +325,7 @@ impl Texture {
             self.inner = Rc::new(inner);
         } else if let Some(inner) = Rc::get_mut(&mut self.inner) {
             if !inner.is_framebuffer {
-                inner.add_framebuffer()?;
+                inner.add_framebuffer(&mut ctx.backend)?;
             }
         } else {
             self.inner = Rc::new(RawTexture::clone_as_target(&self.inner, &mut ctx.backend)?);
@@ -360,30 +336,12 @@ impl Texture {
 
     /// Stores the current state of this `Texture` in an image.
     /// This function is fairly slow and should not be used carelessly.
-    pub fn get_image_data(&self, ctx: &Context) -> RgbaImage {
+    pub fn get_image_data(&self, ctx: &mut Context) -> RgbaImage {
         let _ = ctx;
+
+        let data = ctx.backend.get_image_data(&self.inner);
+
         let (width, height) = self.inner.dimensions;
-
-        // FIXME: this could theoretically overflow, leading to memory unsafety.
-        let byte_count = 4 * width as usize * height as usize;
-        let mut data: Vec<u8> = Vec::with_capacity(byte_count);
-
-        unsafe {
-            // FIXME: consider using glGetTextureImage even if it is only supported since OpenGL 4.5
-            gl::BindTexture(gl::TEXTURE_2D, self.inner.id);
-            gl::GetTexImage(
-                gl::TEXTURE_2D,
-                0,
-                gl::RGBA,
-                gl::UNSIGNED_BYTE,
-                data.as_mut_ptr() as *mut _,
-            );
-            if gl::GetError() != gl::NO_ERROR {
-                panic!("failed to take a screenshot");
-            }
-            data.set_len(byte_count);
-        }
-
         let skip_above = height - (self.position.1 + self.size.1);
         let skip_vertical = self.position.0 * 4;
         let take_vertical = self.size.0 * 4;
@@ -453,7 +411,7 @@ impl DrawTarget for Texture {
 
 /// Used in `DrawConfig` to specify how
 /// each pixel should be draw onto the target.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum BlendMode {
     /// `src_alpha * src_color + (1.0 - src_alpha) * dst_color`

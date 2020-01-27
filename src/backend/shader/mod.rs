@@ -124,7 +124,7 @@ impl Drop for Program {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Uniforms {
     pub object: GLint,
     pub color_modulation: GLint,

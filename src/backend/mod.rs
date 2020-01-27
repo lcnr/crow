@@ -10,9 +10,13 @@ use crate::ErrDontCare;
 
 mod draw;
 mod shader;
+mod state;
 pub(crate) mod tex;
 
+use tex::RawTexture;
+
 use shader::{Program, Uniforms};
+use state::OpenGlState;
 
 #[rustfmt::skip]
 static VERTEX_DATA: [GLfloat; 8] = [
@@ -82,11 +86,11 @@ extern "system" fn debug_callback(
 
 #[derive(Debug)]
 pub struct Backend {
+    state: OpenGlState,
     uniforms: Uniforms,
     events_loop: EventsLoop,
     gl_window: ContextWrapper<PossiblyCurrent, Window>,
     program: Program,
-    frame_buffers: Vec<GLuint>,
     vao: GLuint,
     vbo: GLuint,
 }
@@ -121,9 +125,6 @@ impl Backend {
 
         unsafe {
             gl::Enable(gl::BLEND);
-            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-
-            gl::Enable(gl::DEPTH_TEST);
         }
 
         let program = Program::new()?;
@@ -172,12 +173,16 @@ impl Backend {
         }
 
         let uniforms = program.get_uniforms();
+        let state = OpenGlState::new(
+            uniforms.clone(),
+            gl_window.window().get_inner_size().unwrap().into(),
+        );
 
         Ok(Self {
+            state,
             uniforms,
             events_loop,
             gl_window,
-            frame_buffers: Vec::new(),
             program,
             vao,
             vbo,
@@ -194,12 +199,60 @@ impl Backend {
         self.gl_window.window().get_inner_size().unwrap().into()
     }
 
-    pub fn clear_texture_depth(
-        &mut self,
-        texture: &mut tex::RawTexture,
-    ) -> Result<(), ErrDontCare> {
+    pub fn take_screenshot(&mut self, (width, height): (u32, u32)) -> Vec<u8> {
+        // FIXME: this could theoretically overflow, leading to memory unsafety.
+        let byte_count = 4 * width as usize * height as usize;
+        let mut data: Vec<u8> = Vec::with_capacity(byte_count);
+
+        self.state.update_framebuffer(0);
         unsafe {
-            gl::BindFramebuffer(gl::FRAMEBUFFER, texture.frame_buffer_id);
+            gl::ReadPixels(
+                0,
+                0,
+                width as _,
+                height as _,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                data.as_mut_ptr() as *mut _,
+            );
+            if gl::GetError() != gl::NO_ERROR {
+                panic!("failed to take a screenshot");
+            }
+            data.set_len(byte_count);
+        }
+
+        data
+    }
+
+    pub fn get_image_data(&mut self, texture: &RawTexture) -> Vec<u8> {
+        let (width, height) = texture.dimensions;
+
+        // FIXME: this could theoretically overflow, leading to memory unsafety.
+        let byte_count = 4 * width as usize * height as usize;
+        let mut data: Vec<u8> = Vec::with_capacity(byte_count);
+
+        unsafe {
+            // FIXME: consider using glGetTextureImage even if it is only supported since OpenGL 4.5
+            self.state.update_texture(texture.id);
+            gl::GetTexImage(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                data.as_mut_ptr() as *mut _,
+            );
+            if gl::GetError() != gl::NO_ERROR {
+                panic!("failed to take a screenshot");
+            }
+            data.set_len(byte_count);
+        }
+
+        data
+    }
+
+    pub fn clear_texture_depth(&mut self, texture: &mut RawTexture) -> Result<(), ErrDontCare> {
+        self.state.update_framebuffer(texture.frame_buffer_id);
+        unsafe {
             gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
 
@@ -211,8 +264,8 @@ impl Backend {
         buffer_id: GLuint,
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
+        self.state.update_framebuffer(buffer_id);
         unsafe {
-            gl::BindFramebuffer(gl::FRAMEBUFFER, buffer_id);
             gl::ClearColor(color.0, color.1, color.2, color.3);
             gl::Clear(gl::COLOR_BUFFER_BIT);
         }
@@ -222,14 +275,8 @@ impl Backend {
 
     pub fn finalize_frame(&mut self) -> Result<(), ErrDontCare> {
         self.gl_window.swap_buffers().unwrap();
+        self.state.update_framebuffer(0);
         unsafe {
-            // reset the depth of each drawn to texture
-            for frame_buffer in self.frame_buffers.drain(..) {
-                gl::BindFramebuffer(gl::FRAMEBUFFER, frame_buffer);
-                gl::Clear(gl::DEPTH_BUFFER_BIT);
-            }
-
-            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
 

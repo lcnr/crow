@@ -24,12 +24,11 @@ impl Drop for RawTexture {
 }
 
 impl RawTexture {
-    pub fn new(dimensions: (u32, u32)) -> Result<RawTexture, ErrDontCare> {
+    pub fn new(backend: &mut Backend, dimensions: (u32, u32)) -> Result<RawTexture, ErrDontCare> {
         unsafe {
             let mut id = 0;
-            gl::ActiveTexture(gl::TEXTURE0);
             gl::GenTextures(1, &mut id as *mut _);
-            gl::BindTexture(gl::TEXTURE_2D, id);
+            backend.state.update_texture(id);
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
@@ -58,7 +57,7 @@ impl RawTexture {
         }
     }
 
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<RawTexture, ErrDontCare> {
+    pub fn load<P: AsRef<Path>>(backend: &mut Backend, path: P) -> Result<RawTexture, ErrDontCare> {
         let image = image::open(path)
             .map_err(|err| {
                 eprintln!("Context::load_texture: {:?}", err);
@@ -80,9 +79,8 @@ impl RawTexture {
 
         unsafe {
             let mut id = 0;
-            gl::ActiveTexture(gl::TEXTURE0);
             gl::GenTextures(1, &mut id as *mut _);
-            gl::BindTexture(gl::TEXTURE_2D, id);
+            backend.state.update_texture(id);
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
@@ -111,10 +109,10 @@ impl RawTexture {
         }
     }
 
-    pub fn add_framebuffer(&mut self) -> Result<(), ErrDontCare> {
+    pub fn add_framebuffer(&mut self, backend: &mut Backend) -> Result<(), ErrDontCare> {
         assert!(!self.is_framebuffer);
         self.is_framebuffer = true;
-        let (depth, buffer) = frame_buffer(self.id, self.dimensions);
+        let (depth, buffer) = frame_buffer(backend, self.id, self.dimensions);
 
         unsafe {
             gl::Clear(gl::DEPTH_BUFFER_BIT);
@@ -130,7 +128,7 @@ impl RawTexture {
         let mut texture = 0;
         unsafe {
             gl::GenTextures(1, &mut texture as *mut _);
-            gl::BindTexture(gl::TEXTURE_2D, texture);
+            backend.state.update_texture(texture);
 
             gl::TexImage2D(
                 gl::TEXTURE_2D,
@@ -148,7 +146,7 @@ impl RawTexture {
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as _);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as _);
         }
-        let (depth, buffer) = frame_buffer(texture, previous.dimensions);
+        let (depth, buffer) = frame_buffer(backend, texture, previous.dimensions);
         // clear the new texture
         unsafe {
             let mut old = [1.0, 1.0, 1.0, 1.0];
@@ -183,12 +181,16 @@ impl RawTexture {
 }
 
 /// this function does not reset the currently used framebuffer
-fn frame_buffer(texture: GLuint, dimensions: (u32, u32)) -> (GLuint, GLuint) {
+fn frame_buffer(
+    backend: &mut Backend,
+    texture: GLuint,
+    dimensions: (u32, u32),
+) -> (GLuint, GLuint) {
     let mut buffer = 0;
     unsafe {
         gl::GenFramebuffers(1, &mut buffer as *mut _);
-        gl::BindFramebuffer(gl::FRAMEBUFFER, buffer);
     }
+    backend.state.update_framebuffer(buffer);
 
     let mut depth = 0;
     unsafe {
