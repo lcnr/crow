@@ -6,6 +6,7 @@ use crate::{
 };
 
 impl Backend {
+    #[allow(clippy::too_many_arguments)]
     pub fn draw(
         &mut self,
         target_framebuffer: GLuint,

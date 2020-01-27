@@ -116,7 +116,7 @@ impl Backend {
 
         unsafe {
             gl::Enable(gl::DEBUG_OUTPUT);
-            gl::DebugMessageCallback(Some(debug_callback), 0 as *const _);
+            gl::DebugMessageCallback(Some(debug_callback), ptr::null());
         }
 
         unsafe {
@@ -142,17 +142,18 @@ impl Backend {
             gl::BufferData(
                 gl::ARRAY_BUFFER,
                 (VERTEX_DATA.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
-                mem::transmute(&VERTEX_DATA[0]),
+                &VERTEX_DATA[0] as *const _ as *const _,
                 gl::STATIC_DRAW,
             );
 
             // Use shader program
             gl::UseProgram(program.id);
-            gl::BindFragDataLocation(program.id, 0, CString::new("out_color").unwrap().as_ptr());
+            let out_color_str = CString::new("out_color").unwrap();
+            gl::BindFragDataLocation(program.id, 0, out_color_str.as_ptr());
 
             // Specify the layout of the vertex data
-            let pos_attr =
-                gl::GetAttribLocation(program.id, CString::new("position").unwrap().as_ptr());
+            let pos_str = CString::new("position").unwrap();
+            let pos_attr = gl::GetAttribLocation(program.id, pos_str.as_ptr());
             gl::EnableVertexAttribArray(pos_attr as GLuint);
             gl::VertexAttribPointer(
                 pos_attr as GLuint,

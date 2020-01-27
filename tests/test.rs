@@ -147,12 +147,7 @@ fn zero_section(ctx: &mut GlobalContext) -> Result<RgbaImage, ErrDontCare> {
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (0, 0));
 
-    source.draw_to_texture(
-        ctx,
-        &mut target,
-        (3, 5),
-        &DrawConfig::default(),
-    )?;
+    source.draw_to_texture(ctx, &mut target, (3, 5), &DrawConfig::default())?;
 
     Ok(target.get_image_data(&ctx))
 }

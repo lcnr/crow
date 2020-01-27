@@ -1,11 +1,12 @@
 //! A pixel perfect 2D graphics library
-
 use std::{
     any, fmt,
     path::Path,
     rc::Rc,
     sync::atomic::{AtomicBool, Ordering},
 };
+
+use static_assertions::assert_not_impl_any;
 
 use glutin::{EventsLoop, WindowBuilder};
 
@@ -38,6 +39,8 @@ static INITIALIZED: AtomicBool = AtomicBool::new(false);
 pub struct GlobalContext {
     backend: Backend,
 }
+
+assert_not_impl_any!(GlobalContext: Send, Sync);
 
 impl GlobalContext {
     /// Creates a new `GlobalContext`. It is not possible to have more
@@ -90,14 +93,12 @@ impl GlobalContext {
             )?;
 
             tex.inner = Rc::new(inner);
-        } else {
-            if let Some(inner) = Rc::get_mut(&mut tex.inner) {
-                if !inner.is_framebuffer {
-                    inner.add_framebuffer()?;
-                }
-            } else {
-                tex.inner = Rc::new(RawTexture::clone_as_target(&tex.inner, &mut self.backend)?);
+        } else if let Some(inner) = Rc::get_mut(&mut tex.inner) {
+            if !inner.is_framebuffer {
+                inner.add_framebuffer()?;
             }
+        } else {
+            tex.inner = Rc::new(RawTexture::clone_as_target(&tex.inner, &mut self.backend)?);
         }
 
         Rc::get_mut(&mut tex.inner).ok_or_else(|| panic!("Rc::get_mut"))
@@ -135,7 +136,7 @@ impl GlobalContext {
             .chunks(width as usize * 4)
             .rev()
             .flat_map(|row| row.iter())
-            .map(|p| p.clone())
+            .copied()
             .collect();
 
         RgbaImage::from_vec(width, height, reversed_data).unwrap()
@@ -174,6 +175,8 @@ pub struct Texture {
     position: (u32, u32),
     size: (u32, u32),
 }
+
+assert_not_impl_any!(GlobalContext: Send, Sync);
 
 impl Texture {
     /// Creates a new texture with the given `dimensions`.
@@ -295,7 +298,7 @@ impl Texture {
                     .skip(skip_vertical as usize)
                     .take(take_vertical as usize)
             })
-            .map(|p| p.clone())
+            .copied()
             .collect();
 
         RgbaImage::from_vec(self.size.0, self.size.1, image_data).unwrap()

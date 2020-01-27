@@ -16,5 +16,6 @@ should allow users to do nearly everything they want without requiring custom re
 - [x] subtextures (spritesheets)
 - [ ] flip textures diagonally
 - [x] different drawing modes
+- [ ] change draw to accept a generic target (allows for easy cameras/scaling etc etc)
 - [ ] actual error handling
 - [ ] custom renderer support

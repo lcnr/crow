@@ -49,10 +49,10 @@ impl RawTexture {
             );
 
             Ok(Self {
-                id: id,
+                id,
                 frame_buffer_id: 0,
                 depth_id: 0,
-                dimensions: dimensions,
+                dimensions,
                 is_framebuffer: false,
             })
         }
@@ -75,7 +75,7 @@ impl RawTexture {
             .chunks(image_dimensions.0 as usize * 4)
             .rev()
             .flat_map(|row| row.iter())
-            .map(|p| p.clone())
+            .copied()
             .collect();
 
         unsafe {
@@ -102,7 +102,7 @@ impl RawTexture {
             );
 
             Ok(Self {
-                id: id,
+                id,
                 frame_buffer_id: 0,
                 depth_id: 0,
                 dimensions: image_dimensions,

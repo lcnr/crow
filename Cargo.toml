@@ -8,6 +8,7 @@ edition = "2018"
 gl = "0.14"
 glutin = "0.21"
 image = "0.22"
+static_assertions = "1"
 
 [dev-dependencies]
 rand = "0.7"
