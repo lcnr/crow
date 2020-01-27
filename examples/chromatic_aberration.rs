@@ -6,7 +6,7 @@ use crow::{
     BlendMode, DrawConfig, ErrDontCare, GlobalContext, Texture,
 };
 
-fn inner() -> Result<(), ErrDontCare> {
+fn main() -> Result<(), ErrDontCare> {
     let mut context = GlobalContext::new(WindowBuilder::new())?;
 
     let texture = Texture::load(&mut context, "./textures/player.png")?;
@@ -92,8 +92,4 @@ fn inner() -> Result<(), ErrDontCare> {
     }
 
     Ok(())
-}
-
-fn main() {
-    inner().unwrap();
 }

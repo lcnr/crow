@@ -1,3 +1,5 @@
+//! A pixel perfect 2D graphics library
+
 use std::{
     any, fmt,
     path::Path,
@@ -56,6 +58,14 @@ impl GlobalContext {
 
     pub fn window_dimensions(&self) -> (u32, u32) {
         self.backend.window_dimensions()
+    }
+
+    pub fn window_width(&self) -> u32 {
+        self.window_dimensions().0
+    }
+
+    pub fn window_height(&self) -> u32 {
+        self.window_dimensions().1
     }
 
     pub fn resize_window(&mut self, width: u32, height: u32) {
@@ -214,7 +224,15 @@ impl Texture {
     }
 
     pub fn dimensions(&self) -> (u32, u32) {
-        self.inner.dimensions
+        self.size
+    }
+
+    pub fn width(&self) -> u32 {
+        self.size.0
+    }
+
+    pub fn height(&self) -> u32 {
+        self.size.1
     }
 
     /// Directly draws `self` to the screen buffer at the specified `position`.
