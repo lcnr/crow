@@ -1,4 +1,4 @@
-use std::{fs, io::ErrorKind, ops::Deref, process::Command};
+use std::{fs, io::ErrorKind, ops::Deref};
 
 use glutin::WindowBuilder;
 
@@ -140,6 +140,23 @@ fn section_flipped(ctx: &mut GlobalContext) -> Result<RgbaImage, ErrDontCare> {
     Ok(target.get_image_data(&ctx))
 }
 
+fn zero_section(ctx: &mut GlobalContext) -> Result<RgbaImage, ErrDontCare> {
+    let mut target = Texture::new(ctx, (10, 10))?;
+    target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+
+    let object = Texture::load(ctx, "textures/section_test.png")?;
+    let source = object.get_section((3, 4), (0, 0));
+
+    source.draw_to_texture(
+        ctx,
+        &mut target,
+        (3, 5),
+        &DrawConfig::default(),
+    )?;
+
+    Ok(target.get_image_data(&ctx))
+}
+
 #[derive(Default)]
 struct TestRunner(
     Vec<(
@@ -210,6 +227,7 @@ fn main() {
     runner.add("flip_vertically", flip_vertically);
     runner.add("section_drawing", section_drawing);
     runner.add("section_flipped", section_flipped);
+    runner.add("zero_section", zero_section);
 
     std::process::exit(runner.run())
 }
