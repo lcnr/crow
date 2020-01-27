@@ -11,6 +11,7 @@ pub struct OpenGlState {
     depth: f32,
     framebuffer: GLuint,
     texture: GLuint,
+    object_scale: (u32, u32),
 }
 
 impl OpenGlState {
@@ -37,6 +38,9 @@ impl OpenGlState {
 
             let texture = 0;
             gl::BindTexture(gl::TEXTURE_2D, texture);
+
+            let object_scale = (1, 1);
+            gl::Uniform2ui(uniforms.object_scale, object_scale.0, object_scale.1);
             Self {
                 uniforms,
                 target_dimensions,
@@ -45,6 +49,7 @@ impl OpenGlState {
                 depth,
                 framebuffer,
                 texture,
+                object_scale,
             }
         }
     }
@@ -111,6 +116,19 @@ impl OpenGlState {
             self.texture = texture;
             unsafe {
                 gl::BindTexture(gl::TEXTURE_2D, self.texture);
+            }
+        }
+    }
+
+    pub fn update_object_scale(&mut self, object_scale: (u32, u32)) {
+        if object_scale != self.object_scale {
+            self.object_scale = object_scale;
+            unsafe {
+                gl::Uniform2ui(
+                    self.uniforms.object_scale,
+                    self.object_scale.0,
+                    self.object_scale.1,
+                );
             }
         }
     }

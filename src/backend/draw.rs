@@ -38,11 +38,6 @@ impl Backend {
                 object_position.0,
                 object_position.1,
             );
-            gl::Uniform2ui(
-                self.uniforms.object_scale,
-                draw_config.scale.0,
-                draw_config.scale.1,
-            );
             gl::UniformMatrix4fv(
                 self.uniforms.color_modulation,
                 1,
@@ -64,6 +59,7 @@ impl Backend {
             self.state.update_depth(draw_config.depth);
             self.state.update_framebuffer(target_framebuffer);
             self.state.update_texture(object_texture.id);
+            self.state.update_object_scale(draw_config.scale);
             gl::DrawArrays(gl::TRIANGLE_FAN, 0, 4);
         }
 
