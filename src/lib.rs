@@ -46,6 +46,18 @@ pub trait DrawTarget {
     ) -> Result<(), ErrDontCare>;
 }
 
+impl<T: DrawTarget> DrawTarget for &mut T {
+    fn receive_draw_call(
+        &mut self,
+        ctx: &mut Context,
+        texture: &Texture,
+        position: (i32, i32),
+        config: &DrawConfig,
+    ) -> Result<(), ErrDontCare> {
+        <T>::receive_draw_call(self, ctx, texture, position, config)
+    }
+}
+
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug)]
