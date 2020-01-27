@@ -9,8 +9,9 @@ use crow::{
 fn main() -> Result<(), ErrDontCare> {
     let mut ctx = Context::new(WindowBuilder::new())?;
 
-    let texture = Texture::load(&mut ctx, "./textures/player.png")?;
+    let mut surface = ctx.window_surface();
 
+    let texture = Texture::load(&mut ctx, "./textures/player.png")?;
     let mut target_texture = Texture::new(&mut ctx, (100, 100))?;
 
     let mut fin = false;
@@ -34,8 +35,8 @@ fn main() -> Result<(), ErrDontCare> {
             },
             _ => (),
         });
-
-        target_texture.clear_color(&mut ctx, (0.0, 0.0, 0.0, 0.0))?;
+        ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0))?;
+        ctx.clear_color(&mut target_texture, (0.0, 0.0, 0.0, 0.0))?;
 
         ctx.draw(
             &mut target_texture,

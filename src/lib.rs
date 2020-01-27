@@ -38,24 +38,39 @@ impl<T> fmt::Debug for SkipDebug<T> {
 /// A trait implemented by types upon which can be drawn.
 pub trait DrawTarget {
     /// Draws the `texture` onto `self`.
-    fn receive_draw_call(
+    fn receive_draw(
         &mut self,
         ctx: &mut Context,
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
     ) -> Result<(), ErrDontCare>;
+
+    /// Sets each pixel of `self` to `color`.
+    fn receive_clear_color(
+        &mut self,
+        ctx: &mut Context,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare>;
 }
 
 impl<T: DrawTarget> DrawTarget for &mut T {
-    fn receive_draw_call(
+    fn receive_draw(
         &mut self,
         ctx: &mut Context,
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
-        <T>::receive_draw_call(self, ctx, texture, position, config)
+        <T>::receive_draw(self, ctx, texture, position, config)
+    }
+
+    fn receive_clear_color(
+        &mut self,
+        ctx: &mut Context,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        <T>::receive_clear_color(self, ctx, color)
     }
 }
 
@@ -125,7 +140,19 @@ impl Context {
     where
         T: DrawTarget,
     {
-        target.receive_draw_call(self, source, position, config)
+        target.receive_draw(self, source, position, config)
+    }
+
+    /// Clears the given [`DrawTarget`], setting each pixel to `color`
+    pub fn clear_color<T>(
+        &mut self,
+        target: &mut T,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare>
+    where
+        T: DrawTarget,
+    {
+        target.receive_clear_color(self, color)
     }
 
     /// Stores the current state of the window in an image.
@@ -199,7 +226,7 @@ impl DrawTarget for WindowSurface {
     /// Draws `texture` to the window, to finish the frame, call [`Context::finalize_frame`].
     ///
     /// [`Context::finalize_frame`]: struct.Context.html#method.finalize_frame
-    fn receive_draw_call(
+    fn receive_draw(
         &mut self,
         ctx: &mut Context,
         texture: &Texture,
@@ -216,6 +243,14 @@ impl DrawTarget for WindowSurface {
             position,
             config,
         )
+    }
+
+    fn receive_clear_color(
+        &mut self,
+        ctx: &mut Context,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        ctx.backend.clear_color(0, color)
     }
 }
 
@@ -369,16 +404,6 @@ impl Texture {
         RgbaImage::from_vec(self.size.0, self.size.1, image_data).unwrap()
     }
 
-    /// Overwrites every pixel of `self` with the specified `color`
-    pub fn clear_color(
-        &mut self,
-        ctx: &mut Context,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
-        let target = self.prepare_as_draw_target(ctx)?;
-        ctx.backend.clear_texture_color(target, color)
-    }
-
     /// Resets the depth buffer to `1.0` for every pixel.
     pub fn clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
         let target = self.prepare_as_draw_target(ctx)?;
@@ -396,7 +421,7 @@ impl DrawTarget for Texture {
     /// using this method directly.
     ///
     /// [`Context::draw`]: struct.Context.html#method.draw
-    fn receive_draw_call(
+    fn receive_draw(
         &mut self,
         ctx: &mut Context,
         texture: &Texture,
@@ -414,6 +439,15 @@ impl DrawTarget for Texture {
             position,
             config,
         )
+    }
+
+    fn receive_clear_color(
+        &mut self,
+        ctx: &mut Context,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        let target = self.prepare_as_draw_target(ctx)?;
+        ctx.backend.clear_color(target.frame_buffer_id, color)
     }
 }
 

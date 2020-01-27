@@ -206,22 +206,15 @@ impl Backend {
         Ok(())
     }
 
-    pub fn clear_texture_color(
+    pub fn clear_color(
         &mut self,
-        texture: &mut tex::RawTexture,
+        buffer_id: GLuint,
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         unsafe {
-            gl::BindFramebuffer(gl::FRAMEBUFFER, texture.frame_buffer_id);
-
-            let mut old = [1.0, 1.0, 1.0, 1.0];
-            gl::GetFloatv(
-                gl::COLOR_CLEAR_VALUE,
-                &mut old as *mut [GLfloat; 4] as *mut GLfloat,
-            );
+            gl::BindFramebuffer(gl::FRAMEBUFFER, buffer_id);
             gl::ClearColor(color.0, color.1, color.2, color.3);
             gl::Clear(gl::COLOR_BUFFER_BIT);
-            gl::ClearColor(old[0], old[1], old[2], old[3]);
         }
 
         Ok(())
@@ -237,7 +230,7 @@ impl Backend {
             }
 
             gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
 
         Ok(())

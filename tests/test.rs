@@ -6,7 +6,10 @@ use image::RgbaImage;
 
 use rand::prelude::*;
 
-use crow::{Context, DrawConfig, ErrDontCare, Texture, target::{Scaled, Offset}};
+use crow::{
+    target::{Offset, Scaled},
+    Context, DrawConfig, ErrDontCare, Texture,
+};
 
 pub fn test(name: &str, f: fn(&mut Context) -> Result<RgbaImage, ErrDontCare>) -> Result<(), ()> {
     let mut ctx = Context::new(
@@ -50,8 +53,8 @@ pub fn test(name: &str, f: fn(&mut Context) -> Result<RgbaImage, ErrDontCare>) -
 fn simple(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut a = Texture::new(ctx, (32, 32))?;
     let mut b = Texture::new(ctx, (32, 32))?;
-    a.clear_color(ctx, (1.0, 0.0, 0.0, 1.0))?;
-    b.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut b, (0.0, 1.0, 0.0, 1.0))?;
     ctx.draw(&mut a, &b, (16, 16), &DrawConfig::default())?;
 
     Ok(a.get_image_data(&ctx))
@@ -60,8 +63,8 @@ fn simple(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
 fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut a = Texture::new(ctx, (32, 32))?;
     let mut b = Texture::new(ctx, (32, 32))?;
-    a.clear_color(ctx, (1.0, 0.0, 0.0, 1.0))?;
-    b.clear_color(ctx, (0.5, 0.0, 0.5, 1.0))?;
+    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut b, (0.5, 0.0, 0.5, 1.0))?;
     ctx.draw(
         &mut a,
         &b,
@@ -86,9 +89,9 @@ fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut b = big.get_section((16, 0), (16, 16));
     let mut c = big.get_section((32, 0), (16, 16));
 
-    a.clear_color(ctx, (1.0, 0.0, 0.0, 1.0))?;
-    b.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
-    c.clear_color(ctx, (0.0, 0.0, 1.0, 1.0))?;
+    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut b, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut c, (0.0, 0.0, 1.0, 1.0))?;
 
     ctx.draw(&mut c, &b, (0, 8), &DrawConfig::default())?;
     ctx.draw(
@@ -106,7 +109,7 @@ fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
 
 fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (3, 2));
@@ -118,19 +121,24 @@ fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
 
 fn section_offset(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (3, 2));
 
-    ctx.draw(&mut Offset::new(&mut target, (2, 3)), &source, (1, 2), &DrawConfig::default())?;
+    ctx.draw(
+        &mut Offset::new(&mut target, (2, 3)),
+        &source,
+        (1, 2),
+        &DrawConfig::default(),
+    )?;
 
     Ok(target.get_image_data(&ctx))
 }
 
 fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (3, 2));
@@ -151,7 +159,7 @@ fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
 
 fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (3, 2));
@@ -172,7 +180,7 @@ fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
 
 fn zero_section(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (0, 0));
@@ -251,7 +259,6 @@ fn main() {
     runner.add("section_flipped", section_flipped);
     runner.add("section_scaled", section_scaled);
     runner.add("zero_section", zero_section);
-    
 
     std::process::exit(runner.run())
 }

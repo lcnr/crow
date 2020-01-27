@@ -19,14 +19,14 @@ impl<T: DrawTarget> Scaled<T> {
 }
 
 impl<T: DrawTarget> DrawTarget for Scaled<T> {
-    fn receive_draw_call(
+    fn receive_draw(
         &mut self,
         ctx: &mut Context,
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
-        self.inner.receive_draw_call(
+        self.inner.receive_draw(
             ctx,
             texture,
             (
@@ -38,6 +38,14 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
                 ..config.clone()
             },
         )
+    }
+
+    fn receive_clear_color(
+        &mut self,
+        ctx: &mut Context,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        self.inner.receive_clear_color(ctx, color)
     }
 }
 
@@ -57,18 +65,26 @@ impl<T: DrawTarget> Offset<T> {
 }
 
 impl<T: DrawTarget> DrawTarget for Offset<T> {
-    fn receive_draw_call(
+    fn receive_draw(
         &mut self,
         ctx: &mut Context,
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
-        self.inner.receive_draw_call(
+        self.inner.receive_draw(
             ctx,
             texture,
             (position.0 + self.offset.0, position.1 + self.offset.1),
             config,
         )
+    }
+
+    fn receive_clear_color(
+        &mut self,
+        ctx: &mut Context,
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        self.inner.receive_clear_color(ctx, color)
     }
 }
