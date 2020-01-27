@@ -36,23 +36,23 @@ impl<T> fmt::Debug for SkipDebug<T> {
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug)]
-pub struct GlobalContext {
+pub struct Context {
     backend: Backend,
 }
 
-assert_not_impl_any!(GlobalContext: Send, Sync);
+assert_not_impl_any!(Context: Send, Sync);
 
-impl GlobalContext {
-    /// Creates a new `GlobalContext`. It is not possible to have more
-    /// than one `GlobalContext` at a time.
+impl Context {
+    /// Creates a new `Context`. It is not possible to have more
+    /// than one `Context` at a time.
     ///
-    /// To create a new `GlobalContext` a previous context was used,
+    /// To create a new `Context` a previous context was used,
     /// The previous context has to be dropped using the method
-    /// `GlobalContext::unlock_unchecked()`. This is a workaround and
+    /// `Context::unlock_unchecked()`. This is a workaround and
     /// will probably be fixed in a future release.
     pub fn new(window: WindowBuilder) -> Result<Self, ErrDontCare> {
         if INITIALIZED.compare_and_swap(false, true, Ordering::AcqRel) {
-            panic!("Tried to initialize a second GlobalContext");
+            panic!("Tried to initialize a second Context");
         }
 
         let backend = Backend::initialize(window)?;
@@ -176,13 +176,13 @@ pub struct Texture {
     size: (u32, u32),
 }
 
-assert_not_impl_any!(GlobalContext: Send, Sync);
+assert_not_impl_any!(Context: Send, Sync);
 
 impl Texture {
     /// Creates a new texture with the given `dimensions`.
     ///
     /// The content of the texture is undefined after its creation.
-    pub fn new(ctx: &mut GlobalContext, dimensions: (u32, u32)) -> Result<Self, ErrDontCare> {
+    pub fn new(ctx: &mut Context, dimensions: (u32, u32)) -> Result<Self, ErrDontCare> {
         // ctx is only needed for safety
         let _ = ctx;
         let raw = backend::tex::RawTexture::new(dimensions)?;
@@ -195,7 +195,7 @@ impl Texture {
     }
 
     /// Loads a texture from an image located at `path`.
-    pub fn load<P: AsRef<Path>>(ctx: &mut GlobalContext, path: P) -> Result<Texture, ErrDontCare> {
+    pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, ErrDontCare> {
         // ctx is only needed for safety
         let _ = ctx;
 
@@ -242,7 +242,7 @@ impl Texture {
     /// For this to be shown on screen, it is required to call `finalize_frame`.
     pub fn draw(
         &self,
-        ctx: &mut GlobalContext,
+        ctx: &mut Context,
         position: (i32, i32),
         config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
@@ -260,7 +260,7 @@ impl Texture {
 
     /// Stores the current state of this `Texture` in an image.
     /// This function is fairly slow and should not be used carelessly.
-    pub fn get_image_data(&self, ctx: &GlobalContext) -> RgbaImage {
+    pub fn get_image_data(&self, ctx: &Context) -> RgbaImage {
         let _ = ctx;
         let (width, height) = self.inner.dimensions;
 
@@ -310,7 +310,7 @@ impl Texture {
     /// consider cloning the target first.
     pub fn draw_to_texture(
         &self,
-        ctx: &mut GlobalContext,
+        ctx: &mut Context,
         target: &mut Texture,
         position: (i32, i32),
         config: &DrawConfig,
@@ -331,7 +331,7 @@ impl Texture {
     /// Overwrites every pixel of `self` with the specified `color`
     pub fn clear_color(
         &mut self,
-        ctx: &mut GlobalContext,
+        ctx: &mut Context,
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         let target = ctx.prepare_texture_as_draw_target(self)?;
@@ -339,7 +339,7 @@ impl Texture {
     }
 
     /// Resets the depth buffer to `1.0` for every pixel.
-    pub fn clear_depth(&mut self, ctx: &mut GlobalContext) -> Result<(), ErrDontCare> {
+    pub fn clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
         let target = ctx.prepare_texture_as_draw_target(self)?;
         ctx.backend.clear_texture_depth(target)
     }

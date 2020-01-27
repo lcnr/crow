@@ -3,11 +3,11 @@ use std::{thread, time::Duration};
 use crow::{
     color,
     glutin::{ElementState, Event, VirtualKeyCode, WindowBuilder, WindowEvent},
-    BlendMode, DrawConfig, ErrDontCare, GlobalContext, Texture,
+    BlendMode, Context, DrawConfig, ErrDontCare, Texture,
 };
 
 fn main() -> Result<(), ErrDontCare> {
-    let mut context = GlobalContext::new(WindowBuilder::new())?;
+    let mut context = Context::new(WindowBuilder::new())?;
 
     let texture = Texture::load(&mut context, "./textures/player.png")?;
 

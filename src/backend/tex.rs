@@ -61,7 +61,7 @@ impl RawTexture {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<RawTexture, ErrDontCare> {
         let image = image::open(path)
             .map_err(|err| {
-                eprintln!("GlobalContext::load_texture: {:?}", err);
+                eprintln!("Context::load_texture: {:?}", err);
                 ErrDontCare
             })?
             .to_rgba();
