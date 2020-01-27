@@ -127,7 +127,7 @@ fn section_offset(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let source = object.get_section((3, 4), (3, 2));
 
     ctx.draw(
-        &mut Offset::new(&mut target, (2, 3)),
+        &mut Offset::new(&mut target, (-2, -3)),
         &source,
         (1, 2),
         &DrawConfig::default(),

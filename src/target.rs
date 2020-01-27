@@ -50,6 +50,7 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
 }
 
 /// Can be used as a [`DrawTarget`] which offsets the `position` of each draw call by a given `offset`.
+/// This can be thought of as changing the origin `(0, 0)` to `position`.
 ///
 /// [`DrawTarget`]: ../trait.DrawTarget.html
 #[derive(Debug, Clone)]
@@ -75,7 +76,7 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
         self.inner.receive_draw(
             ctx,
             texture,
-            (position.0 + self.offset.0, position.1 + self.offset.1),
+            (position.0 - self.offset.0, position.1 - self.offset.1),
             config,
         )
     }
