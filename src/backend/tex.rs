@@ -17,7 +17,7 @@ impl Drop for RawTexture {
     fn drop(&mut self) {
         if self.is_framebuffer {
             unsafe { gl::DeleteFramebuffers(1, &self.frame_buffer_id as *const _) }
-            unsafe { gl::DeleteFramebuffers(1, &self.depth_id as *const _) }
+            unsafe { gl::DeleteRenderbuffers(1, &self.depth_id as *const _) }
         }
         unsafe { gl::DeleteTextures(1, &self.id as *const _) }
     }
