@@ -27,19 +27,9 @@ void main() {
         tex_position.x = 1 - tex_position.x;
     }
 
-    tex_coords = vec2(
-        (float(object_texture_offset.x) + float(object_dimensions.x) * tex_position.x)
-            / float(object_texture_dimensions.x),
-        (float(object_texture_offset.y) + float(object_dimensions.y) * tex_position.y)
-            / float(object_texture_dimensions.y)
-    );
+    tex_coords = vec2(object_texture_offset + object_dimensions * tex_position) / vec2(object_texture_dimensions);
     
-    vec2 target_pos = vec2(
-        (position.x * float(object_scale.x) * float(object_dimensions.x)
-            + float(object_position.x)) / float(target_dimensions.x),
-        (position.y * float(object_scale.y) * float(object_dimensions.y)
-            + float(object_position.y)) / float(target_dimensions.y)
-    );
+    vec2 target_pos = (position * vec2(object_scale * object_dimensions) + vec2(object_position)) / vec2(target_dimensions);
 
     target_pos = target_pos * 2.0 - 1.0;
 

@@ -10,11 +10,11 @@ uniform sampler2D object;
 
 void main() {
     color = color_modulation * texture(object, tex_coords);
-    if (invert_color) {
-        color.rgb = 1 - color.rgb;
-    }
-
     if (color.a == 0.0) {
         discard;
+    }
+
+    if (invert_color) {
+        color.rgb = 1.0 - color.rgb;
     }
 }
