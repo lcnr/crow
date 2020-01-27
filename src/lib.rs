@@ -1,6 +1,7 @@
 //! A pixel perfect 2D graphics library
 use std::{
     any, fmt,
+    marker::PhantomData,
     path::Path,
     rc::Rc,
     sync::atomic::{AtomicBool, Ordering},
@@ -33,6 +34,18 @@ impl<T> fmt::Debug for SkipDebug<T> {
     }
 }
 
+/// A trait implemented by types upon which can be drawn.
+pub trait DrawTarget {
+    /// Draws the `texture` onto `self`.
+    fn receive_draw_call(
+        &mut self,
+        ctx: &mut Context,
+        texture: &Texture,
+        position: (i32, i32),
+        config: &DrawConfig,
+    ) -> Result<(), ErrDontCare>;
+}
+
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug)]
@@ -40,7 +53,7 @@ pub struct Context {
     backend: Backend,
 }
 
-assert_not_impl_any!(Context: Send, Sync);
+assert_not_impl_any!(Context: Send, Sync, Clone);
 
 impl Context {
     /// Creates a new `Context`. It is not possible to have more
@@ -75,33 +88,31 @@ impl Context {
         self.backend.resize_window(width, height)
     }
 
-    fn prepare_texture_as_draw_target<'a>(
-        &mut self,
-        tex: &'a mut Texture,
-    ) -> Result<&'a mut RawTexture, ErrDontCare> {
-        if tex.position != (0, 0) || tex.size != tex.inner.dimensions {
-            let mut inner = RawTexture::new(tex.size)?;
-            inner.add_framebuffer()?;
-            self.backend.draw(
-                inner.frame_buffer_id,
-                tex.size,
-                &tex.inner,
-                tex.position,
-                tex.size,
-                (0, 0),
-                &Default::default(),
-            )?;
-
-            tex.inner = Rc::new(inner);
-        } else if let Some(inner) = Rc::get_mut(&mut tex.inner) {
-            if !inner.is_framebuffer {
-                inner.add_framebuffer()?;
-            }
-        } else {
-            tex.inner = Rc::new(RawTexture::clone_as_target(&tex.inner, &mut self.backend)?);
+    /// Returns a handle to the window surface which can be used
+    /// in [`Context::draw`] to draw to the window.
+    ///
+    /// [`Context::draw`]: struct.Context.html#method.draw
+    pub fn window_surface(&self) -> WindowSurface {
+        WindowSurface {
+            _marker: PhantomData,
         }
+    }
 
-        Rc::get_mut(&mut tex.inner).ok_or_else(|| panic!("Rc::get_mut"))
+    /// Draws the `source` onto `target`. To draw to the window,
+    /// use [`Context::window_surface`] as a target.
+    ///
+    /// [`Context::window_surface`]: struct.Context.html#method.window_surface
+    pub fn draw<T>(
+        &mut self,
+        target: &mut T,
+        source: &Texture,
+        position: (i32, i32),
+        config: &DrawConfig,
+    ) -> Result<(), ErrDontCare>
+    where
+        T: DrawTarget,
+    {
+        target.receive_draw_call(self, source, position, config)
     }
 
     /// Stores the current state of the window in an image.
@@ -163,6 +174,38 @@ impl Context {
     }
 }
 
+/// A handle which can be used to draw to the window.
+#[derive(Debug)]
+pub struct WindowSurface {
+    _marker: PhantomData<*const ()>,
+}
+
+assert_not_impl_any!(WindowSurface: Send, Sync);
+
+impl DrawTarget for WindowSurface {
+    /// Draws `texture` to the window, to finish the frame, call [`Context::finalize_frame`].
+    ///
+    /// [`Context::finalize_frame`]: struct.Context.html#method.finalize_frame
+    fn receive_draw_call(
+        &mut self,
+        ctx: &mut Context,
+        texture: &Texture,
+        position: (i32, i32),
+        config: &DrawConfig,
+    ) -> Result<(), ErrDontCare> {
+        let dim = ctx.backend.window_dimensions();
+        ctx.backend.draw(
+            0,
+            dim,
+            &texture.inner,
+            texture.position,
+            texture.size,
+            position,
+            config,
+        )
+    }
+}
+
 /// A two dimensional texture stored in video memory.
 ///
 /// `Texture`s are copy-on-write, so cloning a texture is cheap
@@ -176,7 +219,7 @@ pub struct Texture {
     size: (u32, u32),
 }
 
-assert_not_impl_any!(Context: Send, Sync);
+assert_not_impl_any!(Texture: Send, Sync);
 
 impl Texture {
     /// Creates a new texture with the given `dimensions`.
@@ -238,24 +281,33 @@ impl Texture {
         self.size.1
     }
 
-    /// Directly draws `self` to the screen buffer at the specified `position`.
-    /// For this to be shown on screen, it is required to call `finalize_frame`.
-    pub fn draw(
-        &self,
+    fn prepare_as_draw_target<'a>(
+        &'a mut self,
         ctx: &mut Context,
-        position: (i32, i32),
-        config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
-        let dim = ctx.backend.window_dimensions();
-        ctx.backend.draw(
-            0,
-            dim,
-            &self.inner,
-            self.position,
-            self.size,
-            position,
-            config,
-        )
+    ) -> Result<&'a mut RawTexture, ErrDontCare> {
+        if self.position != (0, 0) || self.size != self.inner.dimensions {
+            let mut inner = RawTexture::new(self.size)?;
+            inner.add_framebuffer()?;
+            ctx.backend.draw(
+                inner.frame_buffer_id,
+                self.size,
+                &self.inner,
+                self.position,
+                self.size,
+                (0, 0),
+                &Default::default(),
+            )?;
+
+            self.inner = Rc::new(inner);
+        } else if let Some(inner) = Rc::get_mut(&mut self.inner) {
+            if !inner.is_framebuffer {
+                inner.add_framebuffer()?;
+            }
+        } else {
+            self.inner = Rc::new(RawTexture::clone_as_target(&self.inner, &mut ctx.backend)?);
+        }
+
+        Rc::get_mut(&mut self.inner).ok_or_else(|| panic!("Rc::get_mut"))
     }
 
     /// Stores the current state of this `Texture` in an image.
@@ -304,44 +356,51 @@ impl Texture {
         RgbaImage::from_vec(self.size.0, self.size.1, image_data).unwrap()
     }
 
-    /// Draws the `self` onto `target`.
-    /// This permanently alters the `target`, in case
-    /// the original `target` is still required,
-    /// consider cloning the target first.
-    pub fn draw_to_texture(
-        &self,
-        ctx: &mut Context,
-        target: &mut Texture,
-        position: (i32, i32),
-        config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
-        let target = ctx.prepare_texture_as_draw_target(target)?;
-
-        ctx.backend.draw(
-            target.frame_buffer_id,
-            target.dimensions,
-            &self.inner,
-            self.position,
-            self.size,
-            position,
-            config,
-        )
-    }
-
     /// Overwrites every pixel of `self` with the specified `color`
     pub fn clear_color(
         &mut self,
         ctx: &mut Context,
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
-        let target = ctx.prepare_texture_as_draw_target(self)?;
+        let target = self.prepare_as_draw_target(ctx)?;
         ctx.backend.clear_texture_color(target, color)
     }
 
     /// Resets the depth buffer to `1.0` for every pixel.
     pub fn clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
-        let target = ctx.prepare_texture_as_draw_target(self)?;
+        let target = self.prepare_as_draw_target(ctx)?;
         ctx.backend.clear_texture_depth(target)
+    }
+}
+
+impl DrawTarget for Texture {
+    /// Draws the `texture` onto `self`.
+    /// This permanently alters `self`, in case
+    /// the original is still required,
+    /// consider cloning this `Texture` first.
+    ///
+    /// It is recommended to call [`Context::draw`] instead of
+    /// using this method directly.
+    ///
+    /// [`Context::draw`]: struct.Context.html#method.draw
+    fn receive_draw_call(
+        &mut self,
+        ctx: &mut Context,
+        texture: &Texture,
+        position: (i32, i32),
+        config: &DrawConfig,
+    ) -> Result<(), ErrDontCare> {
+        let target = self.prepare_as_draw_target(ctx)?;
+
+        ctx.backend.draw(
+            target.frame_buffer_id,
+            target.dimensions,
+            &texture.inner,
+            texture.position,
+            texture.size,
+            position,
+            config,
+        )
     }
 }
 

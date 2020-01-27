@@ -52,7 +52,7 @@ fn simple(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut b = Texture::new(ctx, (32, 32))?;
     a.clear_color(ctx, (1.0, 0.0, 0.0, 1.0))?;
     b.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
-    b.draw_to_texture(ctx, &mut a, (16, 16), &DrawConfig::default())?;
+    ctx.draw(&mut a, &b, (16, 16), &DrawConfig::default())?;
 
     Ok(a.get_image_data(&ctx))
 }
@@ -62,9 +62,9 @@ fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut b = Texture::new(ctx, (32, 32))?;
     a.clear_color(ctx, (1.0, 0.0, 0.0, 1.0))?;
     b.clear_color(ctx, (0.5, 0.0, 0.5, 1.0))?;
-    b.draw_to_texture(
-        ctx,
+    ctx.draw(
         &mut a,
+        &b,
         (16, 16),
         &DrawConfig {
             color_modulation: [
@@ -90,10 +90,10 @@ fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     b.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
     c.clear_color(ctx, (0.0, 0.0, 1.0, 1.0))?;
 
-    b.draw_to_texture(ctx, &mut c, (0, 8), &DrawConfig::default())?;
-    c.draw_to_texture(
-        ctx,
+    ctx.draw(&mut c, &b, (0, 8), &DrawConfig::default())?;
+    ctx.draw(
         &mut a,
+        &c,
         (8, 0),
         &DrawConfig {
             flip_vertically: true,
@@ -111,7 +111,7 @@ fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (3, 2));
 
-    source.draw_to_texture(ctx, &mut target, (3, 5), &DrawConfig::default())?;
+    ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default())?;
 
     Ok(target.get_image_data(&ctx))
 }
@@ -123,9 +123,9 @@ fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (3, 2));
 
-    source.draw_to_texture(
-        ctx,
+    ctx.draw(
         &mut target,
+        &source,
         (3, 5),
         &DrawConfig {
             flip_vertically: true,
@@ -144,7 +144,7 @@ fn zero_section(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let object = Texture::load(ctx, "textures/section_test.png")?;
     let source = object.get_section((3, 4), (0, 0));
 
-    source.draw_to_texture(ctx, &mut target, (3, 5), &DrawConfig::default())?;
+    ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default())?;
 
     Ok(target.get_image_data(&ctx))
 }

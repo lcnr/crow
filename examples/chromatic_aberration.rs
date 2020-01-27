@@ -7,16 +7,16 @@ use crow::{
 };
 
 fn main() -> Result<(), ErrDontCare> {
-    let mut context = Context::new(WindowBuilder::new())?;
+    let mut ctx = Context::new(WindowBuilder::new())?;
 
-    let texture = Texture::load(&mut context, "./textures/player.png")?;
+    let texture = Texture::load(&mut ctx, "./textures/player.png")?;
 
-    let mut target_texture = Texture::new(&mut context, (100, 100))?;
+    let mut target_texture = Texture::new(&mut ctx, (100, 100))?;
 
     let mut fin = false;
     let mut offset = 0;
     loop {
-        context.events_loop().poll_events(|event| match event {
+        ctx.events_loop().poll_events(|event| match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => fin = true,
                 WindowEvent::KeyboardInput { input, .. } => {
@@ -35,11 +35,11 @@ fn main() -> Result<(), ErrDontCare> {
             _ => (),
         });
 
-        target_texture.clear_color(&mut context, (0.0, 0.0, 0.0, 0.0))?;
+        target_texture.clear_color(&mut ctx, (0.0, 0.0, 0.0, 0.0))?;
 
-        texture.draw_to_texture(
-            &mut context,
+        ctx.draw(
             &mut target_texture,
+            &texture,
             (0 - offset, 0 + offset),
             &DrawConfig {
                 blend_mode: BlendMode::Additive,
@@ -47,43 +47,41 @@ fn main() -> Result<(), ErrDontCare> {
                 ..Default::default()
             },
         )?;
-        texture
-            .draw_to_texture(
-                &mut context,
-                &mut target_texture,
-                (0, 0),
-                &DrawConfig {
-                    blend_mode: BlendMode::Additive,
-                    color_modulation: color::GREEN,
-                    ..Default::default()
-                },
-            )
-            .unwrap();
-        texture
-            .draw_to_texture(
-                &mut context,
-                &mut target_texture,
-                (0 + offset, 0 - offset),
-                &DrawConfig {
-                    blend_mode: BlendMode::Additive,
-                    color_modulation: color::BLUE,
-                    ..Default::default()
-                },
-            )
-            .unwrap();
+        ctx.draw(
+            &mut target_texture,
+            &texture,
+            (0, 0),
+            &DrawConfig {
+                blend_mode: BlendMode::Additive,
+                color_modulation: color::GREEN,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        ctx.draw(
+            &mut target_texture,
+            &texture,
+            (0 + offset, 0 - offset),
+            &DrawConfig {
+                blend_mode: BlendMode::Additive,
+                color_modulation: color::BLUE,
+                ..Default::default()
+            },
+        )
+        .unwrap();
 
-        target_texture
-            .draw(
-                &mut context,
-                (100, 100),
-                &DrawConfig {
-                    scale: (4, 4),
-                    ..Default::default()
-                },
-            )
-            .unwrap();
+        ctx.draw(
+            &mut ctx.window_surface(),
+            &target_texture,
+            (100, 100),
+            &DrawConfig {
+                scale: (4, 4),
+                ..Default::default()
+            },
+        )
+        .unwrap();
 
-        context.finalize_frame().unwrap();
+        ctx.finalize_frame().unwrap();
         thread::sleep(Duration::from_millis(1000 / 30));
 
         if fin {
