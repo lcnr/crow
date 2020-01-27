@@ -15,6 +15,7 @@ use image::RgbaImage;
 
 mod backend;
 pub mod color;
+pub mod target;
 
 pub use glutin;
 

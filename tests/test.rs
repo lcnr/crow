@@ -6,7 +6,7 @@ use image::RgbaImage;
 
 use rand::prelude::*;
 
-use crow::{Context, DrawConfig, ErrDontCare, Texture};
+use crow::{Context, DrawConfig, ErrDontCare, Texture, target::{Scaled, Offset}};
 
 pub fn test(name: &str, f: fn(&mut Context) -> Result<RgbaImage, ErrDontCare>) -> Result<(), ()> {
     let mut ctx = Context::new(
@@ -116,6 +116,18 @@ fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     Ok(target.get_image_data(&ctx))
 }
 
+fn section_offset(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+    let mut target = Texture::new(ctx, (10, 10))?;
+    target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+
+    let object = Texture::load(ctx, "textures/section_test.png")?;
+    let source = object.get_section((3, 4), (3, 2));
+
+    ctx.draw(&mut Offset::new(&mut target, (2, 3)), &source, (1, 2), &DrawConfig::default())?;
+
+    Ok(target.get_image_data(&ctx))
+}
+
 fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     let mut target = Texture::new(ctx, (10, 10))?;
     target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
@@ -127,6 +139,27 @@ fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
         &mut target,
         &source,
         (3, 5),
+        &DrawConfig {
+            flip_vertically: true,
+            flip_horizontally: true,
+            ..Default::default()
+        },
+    )?;
+
+    Ok(target.get_image_data(&ctx))
+}
+
+fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+    let mut target = Texture::new(ctx, (10, 10))?;
+    target.clear_color(ctx, (0.0, 1.0, 0.0, 1.0))?;
+
+    let object = Texture::load(ctx, "textures/section_test.png")?;
+    let source = object.get_section((3, 4), (3, 2));
+
+    ctx.draw(
+        &mut Scaled::new(&mut target, (2, 3)),
+        &source,
+        (1, 1),
         &DrawConfig {
             flip_vertically: true,
             flip_horizontally: true,
@@ -214,8 +247,11 @@ fn main() {
     runner.add("color_modulation", color_modulation);
     runner.add("flip_vertically", flip_vertically);
     runner.add("section_drawing", section_drawing);
+    runner.add("section_offset", section_offset);
     runner.add("section_flipped", section_flipped);
+    runner.add("section_scaled", section_scaled);
     runner.add("zero_section", zero_section);
+    
 
     std::process::exit(runner.run())
 }
