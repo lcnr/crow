@@ -465,7 +465,7 @@ pub struct DrawConfig {
     /// Changes the color of the given pixel using matrix multiplication.
     pub color_modulation: [[f32; 4]; 4],
     /// If the red, green and blue color values of the texture should be inverted.
-    pub invert_colors: bool,
+    pub invert_color: bool,
     /// How the texture should be drawn on the target.
     pub blend_mode: BlendMode,
     // `#[non_exhaustive]` forbids FRU, so we use a hidden field instead,
@@ -478,13 +478,8 @@ impl Default for DrawConfig {
         Self {
             scale: (1, 1),
             depth: None,
-            color_modulation: [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-            invert_colors: false,
+            color_modulation: color::IDENTITY,
+            invert_color: false,
             flip_vertically: false,
             flip_horizontally: false,
             blend_mode: Default::default(),

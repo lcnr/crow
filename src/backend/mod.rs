@@ -22,8 +22,8 @@ use state::OpenGlState;
 static VERTEX_DATA: [GLfloat; 8] = [
     0.0, 0.0,
     1.0, 0.0,
-    1.0, 1.0,
-    0.0, 1.0
+    0.0, 1.0,
+    1.0, 1.0
 ];
 
 extern "system" fn debug_callback(

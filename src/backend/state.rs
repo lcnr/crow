@@ -1,6 +1,6 @@
 use gl::types::*;
 
-use crate::{backend::shader::Uniforms, BlendMode};
+use crate::{backend::shader::Uniforms, color, BlendMode};
 
 #[derive(Debug)]
 pub struct OpenGlState {
@@ -12,16 +12,24 @@ pub struct OpenGlState {
     framebuffer: GLuint,
     texture: GLuint,
     object_scale: (u32, u32),
+    color_modulation: [[f32; 4]; 4],
+    object_texture_dimensions: (u32, u32),
+    object_texture_offset: (u32, u32),
+    object_position: (i32, i32),
+    object_dimensions: (u32, u32),
+    invert_color: bool,
+    flip_vertically: bool,
+    flip_horizontally: bool,
 }
 
 impl OpenGlState {
     pub fn new(uniforms: Uniforms, window_dimensions: (u32, u32)) -> Self {
         unsafe {
             let target_dimensions = window_dimensions;
-            gl::Uniform2ui(
+            gl::Uniform2f(
                 uniforms.target_dimensions,
-                target_dimensions.0,
-                target_dimensions.1,
+                target_dimensions.0 as f32,
+                target_dimensions.1 as f32,
             );
             gl::Viewport(0, 0, target_dimensions.0 as _, target_dimensions.1 as _);
 
@@ -41,6 +49,52 @@ impl OpenGlState {
 
             let object_scale = (1, 1);
             gl::Uniform2ui(uniforms.object_scale, object_scale.0, object_scale.1);
+
+            let color_modulation = color::IDENTITY;
+            gl::UniformMatrix4fv(
+                uniforms.color_modulation,
+                1,
+                gl::TRUE,
+                &color_modulation as *const _ as *const f32,
+            );
+
+            let object_texture_dimensions = (128, 128);
+            gl::Uniform2f(
+                uniforms.object_texture_dimensions,
+                object_texture_dimensions.0 as f32,
+                object_texture_dimensions.1 as f32,
+            );
+
+            let object_texture_offset = (0, 0);
+            gl::Uniform2ui(
+                uniforms.object_texture_offset,
+                object_texture_offset.0,
+                object_texture_offset.1,
+            );
+
+            let object_position = (0, 0);
+            gl::Uniform2f(
+                uniforms.object_position,
+                object_position.0 as f32,
+                object_position.1 as f32,
+            );
+
+            let object_dimensions = (128, 128);
+            gl::Uniform2ui(
+                uniforms.object_dimensions,
+                object_dimensions.0,
+                object_dimensions.1,
+            );
+
+            let invert_color = false;
+            gl::Uniform1ui(uniforms.invert_color, invert_color as _);
+
+            let flip_vertically = false;
+            gl::Uniform1ui(uniforms.flip_vertically, flip_vertically as _);
+
+            let flip_horizontally = false;
+            gl::Uniform1ui(uniforms.flip_horizontally, flip_horizontally as _);
+
             Self {
                 uniforms,
                 target_dimensions,
@@ -50,6 +104,14 @@ impl OpenGlState {
                 framebuffer,
                 texture,
                 object_scale,
+                color_modulation,
+                object_texture_dimensions,
+                object_texture_offset,
+                object_position,
+                object_dimensions,
+                invert_color,
+                flip_vertically,
+                flip_horizontally,
             }
         }
     }
@@ -58,10 +120,10 @@ impl OpenGlState {
         if target_dimensions != self.target_dimensions {
             self.target_dimensions = target_dimensions;
             unsafe {
-                gl::Uniform2ui(
+                gl::Uniform2f(
                     self.uniforms.target_dimensions,
-                    self.target_dimensions.0,
-                    self.target_dimensions.1,
+                    self.target_dimensions.0 as f32,
+                    self.target_dimensions.1 as f32,
                 );
                 gl::Viewport(0, 0, target_dimensions.0 as _, target_dimensions.1 as _);
             }
@@ -129,6 +191,99 @@ impl OpenGlState {
                     self.object_scale.0,
                     self.object_scale.1,
                 );
+            }
+        }
+    }
+
+    pub fn update_color_modulation(&mut self, color_modulation: [[f32; 4]; 4]) {
+        if color_modulation != self.color_modulation {
+            self.color_modulation = color_modulation;
+            unsafe {
+                gl::UniformMatrix4fv(
+                    self.uniforms.color_modulation,
+                    1,
+                    gl::TRUE,
+                    &self.color_modulation as *const _ as *const f32,
+                )
+            }
+        }
+    }
+
+    pub fn update_object_texture_dimensions(&mut self, object_texture_dimensions: (u32, u32)) {
+        if object_texture_dimensions != self.object_texture_dimensions {
+            self.object_texture_dimensions = object_texture_dimensions;
+            unsafe {
+                gl::Uniform2f(
+                    self.uniforms.object_texture_dimensions,
+                    self.object_texture_dimensions.0 as f32,
+                    self.object_texture_dimensions.1 as f32,
+                );
+            }
+        }
+    }
+
+    pub fn update_object_texture_offset(&mut self, object_texture_offset: (u32, u32)) {
+        if object_texture_offset != self.object_texture_offset {
+            self.object_texture_offset = object_texture_offset;
+            unsafe {
+                gl::Uniform2ui(
+                    self.uniforms.object_texture_offset,
+                    self.object_texture_offset.0,
+                    self.object_texture_offset.1,
+                );
+            }
+        }
+    }
+
+    pub fn update_object_position(&mut self, object_position: (i32, i32)) {
+        if object_position != self.object_position {
+            self.object_position = object_position;
+            unsafe {
+                gl::Uniform2f(
+                    self.uniforms.object_position,
+                    self.object_position.0 as f32,
+                    self.object_position.1 as f32,
+                );
+            }
+        }
+    }
+
+    pub fn update_object_dimensions(&mut self, object_dimensions: (u32, u32)) {
+        if object_dimensions != self.object_dimensions {
+            self.object_dimensions = object_dimensions;
+            unsafe {
+                gl::Uniform2ui(
+                    self.uniforms.object_dimensions,
+                    self.object_dimensions.0,
+                    self.object_dimensions.1,
+                );
+            }
+        }
+    }
+
+    pub fn update_invert_color(&mut self, invert_color: bool) {
+        if invert_color != self.invert_color {
+            self.invert_color = invert_color;
+            unsafe {
+                gl::Uniform1ui(self.uniforms.invert_color, self.invert_color as _);
+            }
+        }
+    }
+
+    pub fn update_flip_vertically(&mut self, flip_vertically: bool) {
+        if flip_vertically != self.flip_vertically {
+            self.flip_vertically = flip_vertically;
+            unsafe {
+                gl::Uniform1ui(self.uniforms.flip_vertically, self.flip_vertically as _);
+            }
+        }
+    }
+
+    pub fn update_flip_horizontally(&mut self, flip_horizontally: bool) {
+        if flip_horizontally != self.flip_horizontally {
+            self.flip_horizontally = flip_horizontally;
+            unsafe {
+                gl::Uniform1ui(self.uniforms.flip_horizontally, self.flip_horizontally as _);
             }
         }
     }
