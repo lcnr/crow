@@ -1,12 +1,11 @@
 use std::{fs, io::ErrorKind, ops::Deref};
 
-use glutin::WindowBuilder;
-
 use image::RgbaImage;
 
 use rand::prelude::*;
 
 use crow::{
+    glutin::{EventsLoop, WindowBuilder},
     target::{Offset, Scaled},
     Context, DrawConfig, ErrDontCare, Texture,
 };
@@ -16,6 +15,7 @@ pub fn test(name: &str, f: fn(&mut Context) -> Result<RgbaImage, ErrDontCare>) -
         WindowBuilder::new()
             .with_dimensions(From::from((720, 480)))
             .with_visibility(false),
+        EventsLoop::new(),
     )
     .unwrap();
 

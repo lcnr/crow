@@ -91,12 +91,12 @@ impl Context {
     /// The previous context has to be dropped using the method
     /// `Context::unlock_unchecked()`. This is a workaround and
     /// will probably be fixed in a future release.
-    pub fn new(window: WindowBuilder) -> Result<Self, ErrDontCare> {
+    pub fn new(window: WindowBuilder, events_loop: EventsLoop) -> Result<Self, ErrDontCare> {
         if INITIALIZED.compare_and_swap(false, true, Ordering::AcqRel) {
             panic!("Tried to initialize a second Context");
         }
 
-        let backend = Backend::initialize(window)?;
+        let backend = Backend::initialize(window, events_loop)?;
         Ok(Self { backend })
     }
 

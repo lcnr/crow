@@ -105,9 +105,10 @@ impl Drop for Backend {
 }
 
 impl Backend {
-    pub fn initialize(window: WindowBuilder) -> Result<Self, ErrDontCare> {
-        let events_loop = EventsLoop::new();
+    pub fn initialize(window: WindowBuilder, events_loop: EventsLoop) -> Result<Self, ErrDontCare> {
         let gl_window = glutin::ContextBuilder::new()
+            .with_depth_buffer(16)
+            .with_vsync(false)
             .build_windowed(window, &events_loop)
             .unwrap();
 
