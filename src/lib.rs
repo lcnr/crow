@@ -9,7 +9,7 @@ use std::{
 
 use static_assertions::assert_not_impl_any;
 
-use glutin::{EventsLoop, WindowBuilder};
+use glutin::{EventsLoop, Window, WindowBuilder};
 
 use image::RgbaImage;
 
@@ -172,6 +172,22 @@ impl Context {
             .collect();
 
         RgbaImage::from_vec(width, height, reversed_data).unwrap()
+    }
+
+    /// Returns the inner window.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use crow::{Context, glutin::{EventsLoop, WindowBuilder}};
+    /// 
+    /// let context = Context::new(WindowBuilder::new().with_title("Starting"), EventsLoop::new())
+    ///     .expect("Unable to create a context");
+    ///
+    /// context.window().set_title("Running");
+    /// ```
+    pub fn window(&self) -> &Window {
+        self.backend.window()
     }
 
     pub fn events_loop(&mut self) -> &mut EventsLoop {

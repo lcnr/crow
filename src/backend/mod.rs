@@ -196,6 +196,10 @@ impl Backend {
             .set_inner_size(From::from((width, height)))
     }
 
+    pub fn window(&self) -> &Window {
+        self.gl_window.window()
+    }
+
     pub fn window_dimensions(&self) -> (u32, u32) {
         self.gl_window.window().get_inner_size().unwrap().into()
     }
