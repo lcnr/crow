@@ -76,6 +76,45 @@ impl<T: DrawTarget> DrawTarget for &mut T {
 
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
+/// A struct storing the global state which is used
+/// for all operations which require access to the GPU.
+///
+/// # Examples
+///
+/// ```no_run
+/// use crow::{
+///     glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
+///     Context, DrawConfig, Texture,
+/// };
+///
+/// fn main() {
+///     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new()).unwrap();
+///
+///     let texture = Texture::load(&mut ctx, "path/to/texture.png").expect("Unable to load texture");
+///     let mut surface = ctx.window_surface();
+///
+///     let mut fin = false;
+///     loop {
+///         ctx.events_loop().poll_events(|event| match event {
+///             Event::WindowEvent {
+///                 event: WindowEvent::CloseRequested,
+///                 ..
+///             } => fin = true,
+///             _ => (),
+///         });
+///
+///         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0)).unwrap();
+///         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default())
+///             .unwrap();
+///
+///         ctx.finalize_frame().unwrap();
+///
+///         if fin {
+///             break;
+///         }
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 pub struct Context {
     backend: Backend,
@@ -180,7 +219,7 @@ impl Context {
     ///
     /// ```no_run
     /// use crow::{Context, glutin::{EventsLoop, WindowBuilder}};
-    /// 
+    ///
     /// let context = Context::new(WindowBuilder::new().with_title("Starting"), EventsLoop::new())
     ///     .expect("Unable to create a context");
     ///
