@@ -2,6 +2,12 @@
 name = "crow"
 version = "0.1.0"
 authors = ["lcnr/Bastian Kauschke <bastian_kauschke@hotmail.de>"]
+description = "A pixel perfect 2D rendering engine"
+keywords = ["game", "rendering", "2D", "gl"]
+categories = [ "game-development", "graphics", "rendering", "rendering::engine" ]
+license = "MIT"
+repository = "https://github.com/lcnr/crow"
+readme = "README.md"
 edition = "2018"
 
 [dependencies]
