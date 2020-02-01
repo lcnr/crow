@@ -7,10 +7,10 @@ use rand::prelude::*;
 use crow::{
     glutin::{EventsLoop, WindowBuilder},
     target::{Offset, Scaled},
-    Context, DrawConfig, ErrDontCare, Texture,
+    Context, DrawConfig, Texture,
 };
 
-pub fn test(name: &str, f: fn(&mut Context) -> Result<RgbaImage, ErrDontCare>) -> Result<(), ()> {
+pub fn test(name: &str, f: fn(&mut Context) -> Result<RgbaImage, crow::Error>) -> Result<(), ()> {
     let mut ctx = Context::new(
         WindowBuilder::new()
             .with_dimensions(From::from((720, 480)))
@@ -50,7 +50,7 @@ pub fn test(name: &str, f: fn(&mut Context) -> Result<RgbaImage, ErrDontCare>) -
     }
 }
 
-fn simple(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+fn simple(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut a = Texture::new(ctx, (32, 32))?;
     let mut b = Texture::new(ctx, (32, 32))?;
     ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
@@ -60,7 +60,7 @@ fn simple(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     Ok(a.get_image_data(ctx))
 }
 
-fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut a = Texture::new(ctx, (32, 32))?;
     let mut b = Texture::new(ctx, (32, 32))?;
     ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
@@ -83,7 +83,7 @@ fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     Ok(a.get_image_data(ctx))
 }
 
-fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let big = Texture::new(ctx, (48, 16))?;
     let mut a = big.get_section((0, 0), (16, 16));
     let mut b = big.get_section((16, 0), (16, 16));
@@ -107,7 +107,7 @@ fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     Ok(a.get_image_data(ctx))
 }
 
-fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
@@ -119,7 +119,7 @@ fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     Ok(target.get_image_data(ctx))
 }
 
-fn section_offset(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+fn section_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
@@ -136,7 +136,7 @@ fn section_offset(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     Ok(target.get_image_data(ctx))
 }
 
-fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
@@ -157,7 +157,7 @@ fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     Ok(target.get_image_data(ctx))
 }
 
-fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
@@ -178,7 +178,7 @@ fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
     Ok(target.get_image_data(ctx))
 }
 
-fn zero_section(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
+fn zero_section(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
@@ -194,12 +194,12 @@ fn zero_section(ctx: &mut Context) -> Result<RgbaImage, ErrDontCare> {
 struct TestRunner(
     Vec<(
         &'static str,
-        fn(&mut Context) -> Result<RgbaImage, ErrDontCare>,
+        fn(&mut Context) -> Result<RgbaImage, crow::Error>,
     )>,
 );
 
 impl TestRunner {
-    fn add(&mut self, name: &'static str, f: fn(&mut Context) -> Result<RgbaImage, ErrDontCare>) {
+    fn add(&mut self, name: &'static str, f: fn(&mut Context) -> Result<RgbaImage, crow::Error>) {
         self.0.push((name, f))
     }
 

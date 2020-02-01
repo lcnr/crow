@@ -2,7 +2,9 @@ use std::{path::Path, ptr};
 
 use gl::types::*;
 
-use crate::{backend::Backend, ErrDontCare};
+use image::ImageError;
+
+use crate::{backend::Backend, ErrDontCare, LoadTextureError};
 
 #[derive(Debug)]
 pub struct RawTexture {
@@ -57,13 +59,18 @@ impl RawTexture {
         }
     }
 
-    pub fn load<P: AsRef<Path>>(backend: &mut Backend, path: P) -> Result<RawTexture, ErrDontCare> {
-        let image = image::open(path)
-            .map_err(|err| {
-                eprintln!("Context::load_texture: {:?}", err);
-                ErrDontCare
-            })?
-            .to_rgba();
+    pub fn load<P: AsRef<Path>>(
+        backend: &mut Backend,
+        path: P,
+    ) -> Result<RawTexture, LoadTextureError> {
+        let image = match image::open(path) {
+            Ok(image) => image.to_rgba(),
+            Err(ImageError::IoError(e)) => return Err(LoadTextureError::IoError(e)),
+            Err(todo) => {
+                eprintln!("Texture::load: {:?}", todo);
+                return Err(LoadTextureError::Unspecified);
+            }
+        };
 
         let image_dimensions = image.dimensions();
 

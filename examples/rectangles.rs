@@ -7,7 +7,7 @@ use std::{
 use crow::{
     glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
     target::{Offset, Scaled},
-    Context, DrawConfig, DrawTarget, ErrDontCare, Texture,
+    Context, DrawConfig, DrawTarget, Texture,
 };
 
 use rand::Rng;
@@ -21,7 +21,7 @@ pub struct Rectangle {
     color: (f32, f32, f32),
 }
 
-fn main() -> Result<(), ErrDontCare> {
+fn main() -> Result<(), crow::Error> {
     let mut ctx = Context::new(
         WindowBuilder::new()
             .with_dimensions(From::from((WINDOW_SIZE.0 * SCALE, WINDOW_SIZE.1 * SCALE)))
@@ -120,7 +120,7 @@ pub fn draw_rectangles(
     horizontal: &Texture,
     surface: &mut impl DrawTarget,
     ctx: &mut Context,
-) -> Result<(), ErrDontCare> {
+) -> Result<(), crow::Error> {
     for rectangle in rectangles.iter() {
         let right_pos = rectangle.position.0 + rectangle.size.0 as i32 - vertical.width() as i32;
         let mut height = rectangle.size.1;

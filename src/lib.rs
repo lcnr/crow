@@ -15,16 +15,13 @@ use image::RgbaImage;
 
 mod backend;
 pub mod color;
+mod error;
 pub mod target;
 
+pub use error::*;
 pub use glutin;
 
 use backend::{tex::RawTexture, Backend};
-
-/// An error in cases where dealing with errors is hard.
-/// This will be slowly replaced by useful errors later on.
-#[derive(Debug, Clone, Copy)]
-pub struct ErrDontCare;
 
 #[derive(Clone, Copy)]
 struct SkipDebug<T>(T);
@@ -320,7 +317,7 @@ impl Texture {
     }
 
     /// Loads a texture from an image located at `path`.
-    pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, ErrDontCare> {
+    pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, LoadTextureError> {
         let raw = RawTexture::load(&mut ctx.backend, path)?;
 
         let size = raw.dimensions;
