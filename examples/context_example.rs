@@ -3,8 +3,8 @@ use crow::{
     Context, DrawConfig, Texture,
 };
 
-fn main() {
-    let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new()).unwrap();
+fn main() -> Result<(), crow::Error> {
+    let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
 
     let texture = Texture::load(&mut ctx, "./textures/player.png").expect("Unable to load texture");
     let mut surface = ctx.window_surface();
@@ -19,14 +19,15 @@ fn main() {
             _ => (),
         });
 
-        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0)).unwrap();
-        ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default())
-            .unwrap();
+        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0))?;
+        ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default())?;
 
-        ctx.finalize_frame().unwrap();
+        ctx.finalize_frame()?;
 
         if fin {
             break;
         }
     }
+
+    Ok(())
 }

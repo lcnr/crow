@@ -57,8 +57,7 @@ fn main() -> Result<(), crow::Error> {
                 color_modulation: color::GREEN,
                 ..Default::default()
             },
-        )
-        .unwrap();
+        )?;
         ctx.draw(
             &mut target_texture,
             &texture,
@@ -68,8 +67,7 @@ fn main() -> Result<(), crow::Error> {
                 color_modulation: color::BLUE,
                 ..Default::default()
             },
-        )
-        .unwrap();
+        )?;
 
         ctx.draw(
             &mut ctx.window_surface(),
@@ -79,10 +77,9 @@ fn main() -> Result<(), crow::Error> {
                 scale: (4, 4),
                 ..Default::default()
             },
-        )
-        .unwrap();
+        )?;
 
-        ctx.finalize_frame().unwrap();
+        ctx.finalize_frame()?;
         thread::sleep(Duration::from_millis(1000 / 30));
 
         if fin {

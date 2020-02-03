@@ -176,7 +176,10 @@ impl Backend {
         let uniforms = program.get_uniforms();
         let state = OpenGlState::new(
             uniforms.clone(),
-            gl_window.window().get_inner_size().unwrap().into(),
+            gl_window
+                .window()
+                .get_inner_size()
+                .map_or((1024, 720), |s| s.into()),
         );
 
         Ok(Self {
