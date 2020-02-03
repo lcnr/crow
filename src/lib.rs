@@ -49,6 +49,15 @@ pub trait DrawTarget {
         ctx: &mut Context,
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare>;
+
+    /// Draws a line from `from` to `to`.
+    fn receive_line(
+        &mut self,
+        ctx: &mut Context,
+        from: (i32, i32),
+        to: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare>;
 }
 
 impl<T: DrawTarget> DrawTarget for &mut T {
@@ -68,6 +77,16 @@ impl<T: DrawTarget> DrawTarget for &mut T {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         <T>::receive_clear_color(self, ctx, color)
+    }
+
+    fn receive_line(
+        &mut self,
+        ctx: &mut Context,
+        from: (i32, i32),
+        to: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        <T>::receive_line(self, ctx, from, to, color)
     }
 }
 
@@ -163,8 +182,9 @@ impl Context {
         }
     }
 
-    /// Draws the `source` onto `target`. To draw to the window,
-    /// use [`Context::window_surface`] as a target.
+    /// Draws the `source` onto `target`.
+    ///
+    /// To draw to the window, use [`Context::window_surface`] as a target.
     ///
     /// [`Context::window_surface`]: struct.Context.html#method.window_surface
     pub fn draw<T>(
@@ -178,6 +198,24 @@ impl Context {
         T: DrawTarget,
     {
         target.receive_draw(self, source, position, config)
+    }
+
+    /// Draws the a line going from `from` to `to` onto `target` with the given `color`.
+    ///
+    /// To draw this line to the window, use [`Context::window_surface`] as a target.
+    ///
+    /// [`Context::window_surface`]: struct.Context.html#method.window_surface
+    pub fn draw_line<T>(
+        &mut self,
+        target: &mut T,
+        from: (i32, i32),
+        to: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare>
+    where
+        T: DrawTarget,
+    {
+        target.receive_line(self, from, to, color)
     }
 
     /// Clears the given [`DrawTarget`], setting each pixel to `color`
@@ -285,6 +323,17 @@ impl DrawTarget for WindowSurface {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         ctx.backend.clear_color(0, color)
+    }
+
+    fn receive_line(
+        &mut self,
+        ctx: &mut Context,
+        from: (i32, i32),
+        to: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        let _ = (ctx, from, to, color);
+        todo!();
     }
 }
 
@@ -459,6 +508,17 @@ impl DrawTarget for Texture {
     ) -> Result<(), ErrDontCare> {
         let target = self.prepare_as_draw_target(ctx)?;
         ctx.backend.clear_color(target.frame_buffer_id, color)
+    }
+
+    fn receive_line(
+        &mut self,
+        ctx: &mut Context,
+        from: (i32, i32),
+        to: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        let _ = (ctx, from, to, color);
+        todo!();
     }
 }
 

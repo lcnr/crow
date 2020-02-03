@@ -56,5 +56,6 @@ fn main() -> Result<(), crow::Error> {
 - [ ] flip textures diagonally
 - [x] different drawing modes
 - [x] change draw to accept a generic target (allows for easy cameras/scaling etc etc)
+- [ ] debug lines
 - [ ] actual error handling
 - [ ] custom renderer support

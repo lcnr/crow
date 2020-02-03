@@ -47,6 +47,16 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
     ) -> Result<(), ErrDontCare> {
         self.inner.receive_clear_color(ctx, color)
     }
+
+    fn receive_line(
+        &mut self,
+        ctx: &mut Context,
+        from: (i32, i32),
+        to: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        self.inner.receive_line(ctx, from, to, color)
+    }
 }
 
 /// Can be used as a [`DrawTarget`] which offsets the `position` of each draw call by a given `offset`.
@@ -87,5 +97,15 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         self.inner.receive_clear_color(ctx, color)
+    }
+
+    fn receive_line(
+        &mut self,
+        ctx: &mut Context,
+        from: (i32, i32),
+        to: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        self.inner.receive_line(ctx, from, to, color)
     }
 }
