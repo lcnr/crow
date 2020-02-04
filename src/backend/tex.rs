@@ -2,7 +2,7 @@ use std::{path::Path, ptr};
 
 use gl::types::*;
 
-use image::ImageError;
+use image::{ImageError, RgbaImage};
 
 use crate::{backend::Backend, ErrDontCare, LoadTextureError};
 
@@ -59,19 +59,7 @@ impl RawTexture {
         }
     }
 
-    pub fn load<P: AsRef<Path>>(
-        backend: &mut Backend,
-        path: P,
-    ) -> Result<RawTexture, LoadTextureError> {
-        let image = match image::open(path) {
-            Ok(image) => image.to_rgba(),
-            Err(ImageError::IoError(e)) => return Err(LoadTextureError::IoError(e)),
-            Err(todo) => {
-                eprintln!("Texture::load: {:?}", todo);
-                return Err(LoadTextureError::Unspecified);
-            }
-        };
-
+    pub fn from_image(backend: &mut Backend, image: RgbaImage) -> Result<RawTexture, ErrDontCare> {
         let image_dimensions = image.dimensions();
 
         // open gl presents images upside down,
@@ -114,6 +102,24 @@ impl RawTexture {
                 is_framebuffer: false,
             })
         }
+    }
+
+    pub fn load<P: AsRef<Path>>(
+        backend: &mut Backend,
+        path: P,
+    ) -> Result<RawTexture, LoadTextureError> {
+        let image = match image::open(path) {
+            Ok(image) => image.to_rgba(),
+            Err(ImageError::IoError(e)) => return Err(LoadTextureError::IoError(e)),
+            Err(todo) => {
+                eprintln!("Texture::load: {:?}", todo);
+                return Err(LoadTextureError::Unspecified);
+            }
+        };
+
+        Self::from_image(backend, image).map_err(|e| match e {
+            ErrDontCare => LoadTextureError::Unspecified,
+        })
     }
 
     pub fn add_framebuffer(&mut self, backend: &mut Backend) -> Result<(), ErrDontCare> {

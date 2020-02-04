@@ -60,6 +60,21 @@ fn simple(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     Ok(a.get_image_data(ctx))
 }
 
+fn from_image(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
+    let mut a = Texture::new(ctx, (5, 5))?;
+    let b = Texture::from_image(ctx, RgbaImage::from_raw(
+        2,
+        2,
+        vec![
+            0, 0, 255, 255, 255, 255, 0, 255, 0, 255, 255, 255, 0, 0, 0, 255,
+        ],
+    ).unwrap())?;
+    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
+    ctx.draw(&mut a, &b, (1, 1), &DrawConfig::default())?;
+
+    Ok(a.get_image_data(ctx))
+}
+
 fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut a = Texture::new(ctx, (32, 32))?;
     let mut b = Texture::new(ctx, (32, 32))?;
@@ -273,6 +288,7 @@ fn main() {
 
     let mut runner = TestRunner::default();
     runner.add("simple", simple);
+    runner.add("from_image", from_image);
     runner.add("color_modulation", color_modulation);
     runner.add("flip_vertically", flip_vertically);
     runner.add("section_drawing", section_drawing);

@@ -20,6 +20,7 @@ pub mod target;
 
 pub use error::*;
 pub use glutin;
+pub use image;
 
 use backend::{tex::RawTexture, Backend};
 
@@ -356,30 +357,36 @@ pub struct Texture {
 assert_not_impl_any!(Texture: Send, Sync);
 
 impl Texture {
+    fn from_raw(raw: RawTexture) -> Self {
+        let size = raw.dimensions;
+
+        Texture {
+            inner: Rc::new(raw),
+            position: (0, 0),
+            size,
+        }
+    }
+
     /// Creates a new texture with the given `dimensions`.
     ///
     /// The content of the texture is undefined after its creation.
     pub fn new(ctx: &mut Context, dimensions: (u32, u32)) -> Result<Self, ErrDontCare> {
         let raw = RawTexture::new(&mut ctx.backend, dimensions)?;
 
-        Ok(Texture {
-            inner: Rc::new(raw),
-            position: (0, 0),
-            size: dimensions,
-        })
+        Ok(Self::from_raw(raw))
+    }
+
+    pub fn from_image(ctx: &mut Context, image: RgbaImage) -> Result<Self, ErrDontCare> {
+        let raw = RawTexture::from_image(&mut ctx.backend, image)?;
+
+        Ok(Self::from_raw(raw))
     }
 
     /// Loads a texture from an image located at `path`.
     pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, LoadTextureError> {
         let raw = RawTexture::load(&mut ctx.backend, path)?;
 
-        let size = raw.dimensions;
-
-        Ok(Texture {
-            inner: Rc::new(raw),
-            position: (0, 0),
-            size,
-        })
+        Ok(Self::from_raw(raw))
     }
 
     /// Returns the part of `self` specified by `position` and `size` as a `Texture`.
