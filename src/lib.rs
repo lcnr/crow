@@ -146,7 +146,7 @@ impl Context {
     /// Creates a new `Context`. It is not possible to have more
     /// than one `Context` at a time.
     ///
-    /// To create a new `Context` a previous context was used,
+    /// To create a new `Context` after a previous context was used,
     /// The previous context has to be dropped using the method
     /// `Context::unlock_unchecked()`. This is a workaround and
     /// will probably be fixed in a future release.
