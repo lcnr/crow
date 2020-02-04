@@ -436,7 +436,7 @@ impl Texture {
             self.inner = Rc::new(RawTexture::clone_as_target(&self.inner, &mut ctx.backend)?);
         }
 
-        Rc::get_mut(&mut self.inner).ok_or_else(|| panic!("Rc::get_mut"))
+        Rc::get_mut(&mut self.inner).ok_or_else(|| unreachable!())
     }
 
     /// Stores the current state of this `Texture` in an image.
