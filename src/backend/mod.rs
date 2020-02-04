@@ -1,6 +1,6 @@
 use std::{
     ffi::{self, CStr, CString},
-    mem, ptr, slice,
+    ptr, slice,
 };
 
 use gl::types::*;
@@ -15,16 +15,8 @@ pub(crate) mod tex;
 
 use tex::RawTexture;
 
-use shader::{Program, Uniforms};
+use shader::{LinesProgram, Program, Uniforms};
 use state::OpenGlState;
-
-#[rustfmt::skip]
-static VERTEX_DATA: [GLfloat; 8] = [
-    0.0, 0.0,
-    1.0, 0.0,
-    0.0, 1.0,
-    1.0, 1.0
-];
 
 extern "system" fn debug_callback(
     source: GLenum,
@@ -91,17 +83,7 @@ pub struct Backend {
     events_loop: EventsLoop,
     gl_window: ContextWrapper<PossiblyCurrent, Window>,
     program: Program,
-    vao: GLuint,
-    vbo: GLuint,
-}
-
-impl Drop for Backend {
-    fn drop(&mut self) {
-        unsafe {
-            gl::DeleteBuffers(1, &self.vbo);
-            gl::DeleteVertexArrays(1, &self.vao);
-        }
-    }
+    lines_program: LinesProgram,
 }
 
 impl Backend {
@@ -128,54 +110,12 @@ impl Backend {
             gl::Enable(gl::BLEND);
         }
 
-        let program = Program::new()?;
+        let (program, uniforms) = Program::new()?;
+        let lines_program = LinesProgram::new()?;
 
-        let mut vao = 0;
-        let mut vbo = 0;
-
-        unsafe {
-            // Create Vertex Array Object
-            gl::GenVertexArrays(1, &mut vao);
-            gl::BindVertexArray(vao);
-
-            // Create a Vertex Buffer Object and copy the vertex data to it
-            gl::GenBuffers(1, &mut vbo);
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (VERTEX_DATA.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
-                &VERTEX_DATA[0] as *const _ as *const _,
-                gl::STATIC_DRAW,
-            );
-
-            // Use shader program
-            gl::UseProgram(program.id);
-            let out_color_str = CString::new("out_color").unwrap();
-            gl::BindFragDataLocation(program.id, 0, out_color_str.as_ptr());
-
-            // Specify the layout of the vertex data
-            let pos_str = CString::new("position").unwrap();
-            let pos_attr = gl::GetAttribLocation(program.id, pos_str.as_ptr());
-            gl::EnableVertexAttribArray(pos_attr as GLuint);
-            gl::VertexAttribPointer(
-                pos_attr as GLuint,
-                2,
-                gl::FLOAT,
-                gl::FALSE as GLboolean,
-                0,
-                ptr::null(),
-            );
-        }
-
-        // prepare screen for the first frame
-        unsafe {
-            gl::ClearColor(0.1, 0.4, 0.7, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-        }
-
-        let uniforms = program.get_uniforms();
         let state = OpenGlState::new(
             uniforms.clone(),
+            (program.id, program.vao),
             gl_window
                 .window()
                 .get_inner_size()
@@ -188,8 +128,7 @@ impl Backend {
             events_loop,
             gl_window,
             program,
-            vao,
-            vbo,
+            lines_program,
         })
     }
 

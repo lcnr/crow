@@ -190,6 +190,16 @@ fn zero_section(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     Ok(target.get_image_data(ctx))
 }
 
+fn debug_lines(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
+    let mut target = Texture::new(ctx, (10, 10))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+
+    ctx.draw_line(&mut target, (2, 2), (2, 10), (1.0, 0.0, 0.0, 1.0))?;
+    ctx.draw_line(&mut target, (4, 9), (9, 9), (1.0, 0.0, 0.0, 1.0))?;
+
+    Ok(target.get_image_data(ctx))
+}
+
 #[derive(Default)]
 struct TestRunner(
     Vec<(
@@ -259,6 +269,7 @@ fn main() {
     runner.add("section_flipped", section_flipped);
     runner.add("section_scaled", section_scaled);
     runner.add("zero_section", zero_section);
+    runner.add("debug_lines", debug_lines);
 
     std::process::exit(runner.run())
 }

@@ -51,6 +51,8 @@ pub trait DrawTarget {
     ) -> Result<(), ErrDontCare>;
 
     /// Draws a line from `from` to `to`.
+    ///
+    /// The pixel at `to` is not part of the line.
     fn receive_line(
         &mut self,
         ctx: &mut Context,
@@ -202,6 +204,7 @@ impl Context {
 
     /// Draws the a line going from `from` to `to` onto `target` with the given `color`.
     ///
+    /// The pixel at `to` is not part of the line.
     /// To draw this line to the window, use [`Context::window_surface`] as a target.
     ///
     /// [`Context::window_surface`]: struct.Context.html#method.window_surface
@@ -332,8 +335,8 @@ impl DrawTarget for WindowSurface {
         to: (i32, i32),
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
-        let _ = (ctx, from, to, color);
-        todo!();
+        let dim = ctx.backend.window_dimensions();
+        ctx.backend.draw_line(0, dim, from, to, color)
     }
 }
 
@@ -517,8 +520,10 @@ impl DrawTarget for Texture {
         to: (i32, i32),
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
-        let _ = (ctx, from, to, color);
-        todo!();
+        let target = self.prepare_as_draw_target(ctx)?;
+
+        ctx.backend
+            .draw_line(target.frame_buffer_id, target.dimensions, from, to, color)
     }
 }
 

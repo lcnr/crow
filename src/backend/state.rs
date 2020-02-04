@@ -5,7 +5,9 @@ use crate::{backend::shader::Uniforms, color, BlendMode};
 #[derive(Debug)]
 pub struct OpenGlState {
     uniforms: Uniforms,
+    program: GLuint,
     target_dimensions: (u32, u32),
+    viewport_dimensions: (u32, u32),
     blend_mode: BlendMode,
     depth_active: bool,
     depth: f32,
@@ -23,15 +25,24 @@ pub struct OpenGlState {
 }
 
 impl OpenGlState {
-    pub fn new(uniforms: Uniforms, window_dimensions: (u32, u32)) -> Self {
+    pub fn new(
+        uniforms: Uniforms,
+        (program, vao): (GLuint, GLuint),
+        window_dimensions: (u32, u32),
+    ) -> Self {
         unsafe {
+            gl::UseProgram(program);
+            gl::BindVertexArray(vao);
+
             let target_dimensions = window_dimensions;
             gl::Uniform2f(
                 uniforms.target_dimensions,
                 target_dimensions.0 as f32,
                 target_dimensions.1 as f32,
             );
-            gl::Viewport(0, 0, target_dimensions.0 as _, target_dimensions.1 as _);
+
+            let viewport_dimensions = window_dimensions;
+            gl::Viewport(0, 0, viewport_dimensions.0 as _, viewport_dimensions.1 as _);
 
             let blend_mode = BlendMode::Alpha;
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
@@ -97,7 +108,9 @@ impl OpenGlState {
 
             Self {
                 uniforms,
+                program,
                 target_dimensions,
+                viewport_dimensions,
                 blend_mode,
                 depth_active,
                 depth,
@@ -116,6 +129,16 @@ impl OpenGlState {
         }
     }
 
+    pub fn update_program(&mut self, program: GLuint, vao: GLuint) {
+        if program != self.program {
+            self.program = program;
+            unsafe {
+                gl::UseProgram(program);
+                gl::BindVertexArray(vao);
+            }
+        }
+    }
+
     pub fn update_target_dimensions(&mut self, target_dimensions: (u32, u32)) {
         if target_dimensions != self.target_dimensions {
             self.target_dimensions = target_dimensions;
@@ -125,7 +148,15 @@ impl OpenGlState {
                     self.target_dimensions.0 as f32,
                     self.target_dimensions.1 as f32,
                 );
-                gl::Viewport(0, 0, target_dimensions.0 as _, target_dimensions.1 as _);
+            }
+        }
+    }
+
+    pub fn update_viewport_dimensions(&mut self, viewport_dimensions: (u32, u32)) {
+        if viewport_dimensions != self.viewport_dimensions {
+            self.viewport_dimensions = viewport_dimensions;
+            unsafe {
+                gl::Viewport(0, 0, viewport_dimensions.0 as _, viewport_dimensions.1 as _);
             }
         }
     }
@@ -142,12 +173,21 @@ impl OpenGlState {
         }
     }
 
+    pub fn disable_depth(&mut self) {
+        if self.depth_active {
+            self.depth_active = false;
+            unsafe {
+                gl::Disable(gl::DEPTH_TEST);
+            }
+        }
+    }
+
     // we want to use the precise depth in the shader,
     // so checking for equality should be fine here.
     #[allow(clippy::float_cmp)]
     pub fn update_depth(&mut self, depth: Option<f32>) {
-        unsafe {
-            if let Some(depth) = depth {
+        if let Some(depth) = depth {
+            unsafe {
                 if !self.depth_active {
                     self.depth_active = true;
                     gl::Enable(gl::DEPTH_TEST);
@@ -157,10 +197,9 @@ impl OpenGlState {
                     self.depth = depth;
                     gl::Uniform1f(self.uniforms.depth, self.depth);
                 }
-            } else if self.depth_active {
-                self.depth_active = false;
-                gl::Disable(gl::DEPTH_TEST);
             }
+        } else {
+            self.disable_depth()
         }
     }
 
