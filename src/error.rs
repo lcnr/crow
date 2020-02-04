@@ -11,9 +11,9 @@ pub struct ErrDontCare;
 /// # Examples
 ///
 /// ```rust, no_run
-/// use crow::{Context, Error, glutin::{WindowBuilder, EventsLoop}, Texture};
+/// use crow::{Context, glutin::{WindowBuilder, EventsLoop}, Texture};
 ///
-/// fn main() -> Result<(), Error> {
+/// fn main() -> Result<(), crow::Error> {
 ///     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
 ///
 ///     let image = Texture::load(&mut ctx, "this/path/does/not/exist.png")?;
