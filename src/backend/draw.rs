@@ -44,7 +44,6 @@ impl Backend {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn draw_line(
         &mut self,
         target_framebuffer: GLuint,

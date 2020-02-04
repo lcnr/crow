@@ -2,3 +2,4 @@
 /tests/actual
 **/*.rs.bk
 Cargo.lock
+main.rs
