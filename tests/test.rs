@@ -200,6 +200,17 @@ fn debug_lines(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     Ok(target.get_image_data(ctx))
 }
 
+fn lines_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
+    let mut image = Texture::new(ctx, (10, 10))?;
+    let mut target = Offset::new(&mut image, (-1, -2));
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+
+    ctx.draw_line(&mut target, (1, 0), (1, 8), (1.0, 0.0, 0.0, 1.0))?;
+    ctx.draw_line(&mut target, (3, 7), (8, 7), (1.0, 0.0, 0.0, 1.0))?;
+
+    Ok(image.get_image_data(ctx))
+}
+
 #[derive(Default)]
 struct TestRunner(
     Vec<(
@@ -270,6 +281,7 @@ fn main() {
     runner.add("section_scaled", section_scaled);
     runner.add("zero_section", zero_section);
     runner.add("debug_lines", debug_lines);
+    runner.add("lines_offset", lines_offset);
 
     std::process::exit(runner.run())
 }

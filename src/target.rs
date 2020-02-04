@@ -55,7 +55,12 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
         to: (i32, i32),
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
-        self.inner.receive_line(ctx, from, to, color)
+        self.inner.receive_line(
+            ctx,
+            (from.0 * self.scale.0 as i32, from.1 * self.scale.1 as i32),
+            (to.0 * self.scale.0 as i32, to.1 * self.scale.1 as i32),
+            color,
+        )
     }
 }
 
@@ -106,6 +111,11 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
         to: (i32, i32),
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
-        self.inner.receive_line(ctx, from, to, color)
+        self.inner.receive_line(
+            ctx,
+            (from.0 - self.offset.0, from.1 - self.offset.1),
+            (to.0 - self.offset.0, to.1 - self.offset.1),
+            color,
+        )
     }
 }
