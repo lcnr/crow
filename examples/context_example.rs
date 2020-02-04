@@ -1,3 +1,5 @@
+//! A simple example drawing a texture.
+
 use crow::{
     glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
     Context, DrawConfig, Texture,

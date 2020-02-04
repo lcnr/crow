@@ -1,3 +1,7 @@
+//! A simple implementation of chromatic aberration.
+//!
+//! Press space to split and offset the 3 color channels.
+
 use std::{thread, time::Duration};
 
 use crow::{
