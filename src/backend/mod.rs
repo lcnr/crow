@@ -113,7 +113,7 @@ impl Backend {
         let lines_program = LinesProgram::new()?;
 
         let state = OpenGlState::new(
-            uniforms.clone(),
+            uniforms,
             (program.id, program.vao),
             gl_window
                 .window()

@@ -1,3 +1,4 @@
+#![warn(clippy::clone_on_ref_ptr)]
 //! A pixel perfect 2D graphics library
 use std::{
     any, fmt,
@@ -401,7 +402,7 @@ impl Texture {
         assert!(position.1 + size.1 <= self.size.1);
 
         Texture {
-            inner: self.inner.clone(),
+            inner: Rc::clone(&self.inner),
             position: (self.position.0 + position.0, self.position.1 + position.1),
             size,
         }
