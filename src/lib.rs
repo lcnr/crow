@@ -223,7 +223,7 @@ impl Context {
     }
 
     /// Clears the given [`DrawTarget`], setting each pixel to `color`
-    /// 
+    ///
     /// [`DrawTarget`]: trait.DrawTarget.html
     pub fn clear_color<T>(
         &mut self,

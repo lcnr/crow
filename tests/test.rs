@@ -62,13 +62,17 @@ fn simple(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
 
 fn from_image(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut a = Texture::new(ctx, (5, 5))?;
-    let b = Texture::from_image(ctx, RgbaImage::from_raw(
-        2,
-        2,
-        vec![
-            0, 0, 255, 255, 255, 255, 0, 255, 0, 255, 255, 255, 0, 0, 0, 255,
-        ],
-    ).unwrap())?;
+    let b = Texture::from_image(
+        ctx,
+        RgbaImage::from_raw(
+            2,
+            2,
+            vec![
+                0, 0, 255, 255, 255, 255, 0, 255, 0, 255, 255, 255, 0, 0, 0, 255,
+            ],
+        )
+        .unwrap(),
+    )?;
     ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
     ctx.draw(&mut a, &b, (1, 1), &DrawConfig::default())?;
 

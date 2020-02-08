@@ -120,8 +120,8 @@ impl Program {
 
             // Use shader program
             gl::UseProgram(program);
-            let out_color_str = CString::new("out_color").unwrap();
-            gl::BindFragDataLocation(program, 0, out_color_str.as_ptr());
+            let color_str = CString::new("color").unwrap();
+            gl::BindFragDataLocation(program, 0, color_str.as_ptr());
 
             // Specify the layout of the vertex data
             let pos_str = CString::new("position").unwrap();
