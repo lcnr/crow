@@ -5,6 +5,7 @@ use crate::{backend::shader::Uniforms, color, BlendMode};
 #[derive(Debug)]
 pub struct OpenGlState {
     uniforms: Uniforms,
+    debug_lines_color_uniform: GLint,
     program: GLuint,
     target_dimensions: (u32, u32),
     viewport_dimensions: (u32, u32),
@@ -22,11 +23,13 @@ pub struct OpenGlState {
     invert_color: bool,
     flip_vertically: bool,
     flip_horizontally: bool,
+    debug_line_color: (f32, f32, f32, f32),
 }
 
 impl OpenGlState {
     pub fn new(
         uniforms: Uniforms,
+        debug_lines_color_uniform: GLint,
         (program, vao): (GLuint, GLuint),
         window_dimensions: (u32, u32),
     ) -> Self {
@@ -108,6 +111,7 @@ impl OpenGlState {
 
             Self {
                 uniforms,
+                debug_lines_color_uniform,
                 program,
                 target_dimensions,
                 viewport_dimensions,
@@ -125,6 +129,7 @@ impl OpenGlState {
                 invert_color,
                 flip_vertically,
                 flip_horizontally,
+                debug_line_color: (0.0, 0.0, 0.0, 0.0),
             }
         }
     }
@@ -324,6 +329,21 @@ impl OpenGlState {
             unsafe {
                 gl::Uniform1ui(self.uniforms.flip_horizontally, self.flip_horizontally as _);
             }
+        }
+    }
+
+    pub fn update_debug_line_color(&mut self, debug_line_color: (f32, f32, f32, f32)) {
+        if debug_line_color != self.debug_line_color {
+            self.debug_line_color = debug_line_color;
+        }
+        unsafe {
+            gl::Uniform4f(
+                self.debug_lines_color_uniform,
+                debug_line_color.0,
+                debug_line_color.1,
+                debug_line_color.2,
+                debug_line_color.3,
+            );
         }
     }
 }

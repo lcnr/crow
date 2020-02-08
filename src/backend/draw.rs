@@ -57,6 +57,7 @@ impl Backend {
         s.update_framebuffer(target_framebuffer);
         s.update_viewport_dimensions(target_dimensions);
         s.disable_depth();
+        s.update_debug_line_color(color);
         unsafe {
             let data: [GLfloat; 4] = [
                 (from.0 as f32 + 0.5) / target_dimensions.0 as f32 * 2.0 - 1.0,
@@ -69,13 +70,6 @@ impl Backend {
                 0,
                 mem::size_of_val(&data) as _,
                 &data as *const _ as *const _,
-            );
-            gl::Uniform4f(
-                self.lines_program.color_uniform,
-                color.0,
-                color.1,
-                color.2,
-                color.3,
             );
             gl::DrawArrays(gl::LINES, 0, 2);
         }

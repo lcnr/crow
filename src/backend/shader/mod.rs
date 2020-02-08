@@ -195,13 +195,12 @@ static LINES_VERTEX_DATA: [GLfloat; 4] = [
 #[derive(Debug)]
 pub struct LinesProgram {
     pub id: GLuint,
-    pub color_uniform: GLint,
     pub vao: GLuint,
     pub vbo: GLuint,
 }
 
 impl LinesProgram {
-    pub fn new() -> Result<Self, ErrDontCare> {
+    pub fn new() -> Result<(Self, GLint), ErrDontCare> {
         let program = compile_program(
             include_str!("vertex_lines.glsl"),
             include_str!("fragment_lines.glsl"),
@@ -227,8 +226,8 @@ impl LinesProgram {
 
             // Use shader program
             gl::UseProgram(program);
-            let out_color_str = CString::new("out_color").unwrap();
-            gl::BindFragDataLocation(program, 0, out_color_str.as_ptr());
+            let color_str = CString::new("color").unwrap();
+            gl::BindFragDataLocation(program, 0, color_str.as_ptr());
 
             // Specify the layout of the vertex data
             let pos_str = CString::new("position").unwrap();
@@ -252,12 +251,15 @@ impl LinesProgram {
             panic!("unknown uniform: {}", name_str)
         }
 
-        Ok(Self {
-            id: program,
+        Ok((
+            Self {
+                id: program,
+
+                vao,
+                vbo,
+            },
             color_uniform,
-            vao,
-            vbo,
-        })
+        ))
     }
 }
 
