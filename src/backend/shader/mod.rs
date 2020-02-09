@@ -237,7 +237,7 @@ impl LinesProgram {
                 gl::ARRAY_BUFFER,
                 mem::size_of_val(&LINES_VERTEX_DATA) as GLsizeiptr,
                 &LINES_VERTEX_DATA[0] as *const _ as *const _,
-                gl::STREAM_DRAW,
+                gl::STATIC_DRAW,
             );
 
             // Use shader program
