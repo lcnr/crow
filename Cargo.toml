@@ -18,7 +18,12 @@ static_assertions = "1"
 
 [dev-dependencies]
 rand = "0.7"
+criterion = "0.3"
 
 [[test]]
 name = "test"
+harness = false
+
+[[bench]]
+name = "debug_lines"
 harness = false
