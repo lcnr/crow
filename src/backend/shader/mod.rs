@@ -188,8 +188,8 @@ impl Drop for Program {
 
 #[rustfmt::skip]
 static LINES_VERTEX_DATA: [GLfloat; 4] = [
-    0.0, 0.0,
-    1.0, 1.0,
+    1.0, 0.0,
+    0.0, 1.0,
 ];
 
 #[derive(Debug)]
@@ -200,7 +200,7 @@ pub struct LinesProgram {
 }
 
 impl LinesProgram {
-    pub fn new() -> Result<(Self, GLint), ErrDontCare> {
+    pub fn new() -> Result<(Self, GLint, GLint), ErrDontCare> {
         let program = compile_program(
             include_str!("vertex_lines.glsl"),
             include_str!("fragment_lines.glsl"),
@@ -251,6 +251,14 @@ impl LinesProgram {
             panic!("unknown uniform: {}", name_str)
         }
 
+        let name_str = "start_end";
+        let name = CString::new(name_str).unwrap();
+        let start_end = unsafe { gl::GetUniformLocation(program, name.as_ptr()) };
+
+        if start_end == -1 {
+            panic!("unknown uniform: {}", name_str)
+        }
+
         Ok((
             Self {
                 id: program,
@@ -259,6 +267,7 @@ impl LinesProgram {
                 vbo,
             },
             color_uniform,
+            start_end,
         ))
     }
 }

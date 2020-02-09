@@ -110,11 +110,12 @@ impl Backend {
         }
 
         let (program, uniforms) = Program::new()?;
-        let (lines_program, line_color_uniform) = LinesProgram::new()?;
+        let (lines_program, line_color_uniform, start_end_uniform) = LinesProgram::new()?;
 
         let state = OpenGlState::new(
             uniforms,
             line_color_uniform,
+            start_end_uniform,
             (program.id, program.vao),
             gl_window
                 .window()

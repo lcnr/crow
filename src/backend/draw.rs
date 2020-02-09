@@ -1,5 +1,3 @@
-use std::mem;
-
 use gl::types::*;
 
 use crate::{
@@ -58,19 +56,14 @@ impl Backend {
         s.update_viewport_dimensions(target_dimensions);
         s.disable_depth();
         s.update_debug_line_color(color);
+        let data = (
+            (from.0 as f32 + 0.5) / target_dimensions.0 as f32 * 2.0 - 1.0,
+            (from.1 as f32 + 0.5) / target_dimensions.1 as f32 * 2.0 - 1.0,
+            (to.0 as f32 + 0.5) / target_dimensions.0 as f32 * 2.0 - 1.0,
+            (to.1 as f32 + 0.5) / target_dimensions.1 as f32 * 2.0 - 1.0,
+        );
+        s.update_debug_line_start_end(data);
         unsafe {
-            let data: [GLfloat; 4] = [
-                (from.0 as f32 + 0.5) / target_dimensions.0 as f32 * 2.0 - 1.0,
-                (from.1 as f32 + 0.5) / target_dimensions.1 as f32 * 2.0 - 1.0,
-                (to.0 as f32 + 0.5) / target_dimensions.0 as f32 * 2.0 - 1.0,
-                (to.1 as f32 + 0.5) / target_dimensions.1 as f32 * 2.0 - 1.0,
-            ];
-            gl::BufferSubData(
-                gl::ARRAY_BUFFER,
-                0,
-                mem::size_of_val(&data) as _,
-                &data as *const _ as *const _,
-            );
             gl::DrawArrays(gl::LINES, 0, 2);
         }
 
