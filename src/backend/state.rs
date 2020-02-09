@@ -6,6 +6,7 @@ use crate::{backend::shader::Uniforms, color, BlendMode};
 pub struct OpenGlState {
     uniforms: Uniforms,
     debug_lines_color_uniform: GLint,
+    debug_lines_start_end_uniform: GLint,
     program: GLuint,
     target_dimensions: (u32, u32),
     viewport_dimensions: (u32, u32),
@@ -24,12 +25,14 @@ pub struct OpenGlState {
     flip_vertically: bool,
     flip_horizontally: bool,
     debug_line_color: (f32, f32, f32, f32),
+    debug_line_start_end: (f32, f32, f32, f32),
 }
 
 impl OpenGlState {
     pub fn new(
         uniforms: Uniforms,
         debug_lines_color_uniform: GLint,
+        debug_lines_start_end_uniform: GLint,
         (program, vao): (GLuint, GLuint),
         window_dimensions: (u32, u32),
     ) -> Self {
@@ -112,6 +115,7 @@ impl OpenGlState {
             Self {
                 uniforms,
                 debug_lines_color_uniform,
+                debug_lines_start_end_uniform,
                 program,
                 target_dimensions,
                 viewport_dimensions,
@@ -130,6 +134,7 @@ impl OpenGlState {
                 flip_vertically,
                 flip_horizontally,
                 debug_line_color: (0.0, 0.0, 0.0, 0.0),
+                debug_line_start_end: (std::f32::MIN, std::f32::MIN, std::f32::MIN, std::f32::MIN),
             }
         }
     }
@@ -343,6 +348,20 @@ impl OpenGlState {
                 debug_line_color.1,
                 debug_line_color.2,
                 debug_line_color.3,
+            );
+        }
+    }
+    pub fn update_debug_line_start_end(&mut self, debug_line_start_end: (f32, f32, f32, f32)) {
+        if debug_line_start_end != self.debug_line_start_end {
+            self.debug_line_start_end = debug_line_start_end;
+        }
+        unsafe {
+            gl::Uniform4f(
+                self.debug_lines_start_end_uniform,
+                debug_line_start_end.0,
+                debug_line_start_end.1,
+                debug_line_start_end.2,
+                debug_line_start_end.3,
             );
         }
     }
