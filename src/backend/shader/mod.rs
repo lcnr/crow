@@ -186,6 +186,22 @@ impl Drop for Program {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Uniforms {
+    pub object: GLint,
+    pub color_modulation: GLint,
+    pub invert_color: GLint,
+    pub flip_vertically: GLint,
+    pub flip_horizontally: GLint,
+    pub target_dimensions: GLint,
+    pub object_texture_dimensions: GLint,
+    pub object_texture_offset: GLint,
+    pub object_dimensions: GLint,
+    pub object_position: GLint,
+    pub object_scale: GLint,
+    pub depth: GLint,
+}
+
 #[rustfmt::skip]
 static LINES_VERTEX_DATA: [GLfloat; 4] = [
     1.0, 0.0,
@@ -200,7 +216,7 @@ pub struct LinesProgram {
 }
 
 impl LinesProgram {
-    pub fn new() -> Result<(Self, GLint, GLint), ErrDontCare> {
+    pub fn new() -> Result<(Self, LinesUniforms), ErrDontCare> {
         let program = compile_program(
             include_str!("vertex_lines.glsl"),
             include_str!("fragment_lines.glsl"),
@@ -262,12 +278,13 @@ impl LinesProgram {
         Ok((
             Self {
                 id: program,
-
                 vao,
                 vbo,
             },
-            color_uniform,
-            start_end,
+            LinesUniforms {
+                color: color_uniform,
+                start_end,
+            },
         ))
     }
 }
@@ -282,18 +299,8 @@ impl Drop for LinesProgram {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Uniforms {
-    pub object: GLint,
-    pub color_modulation: GLint,
-    pub invert_color: GLint,
-    pub flip_vertically: GLint,
-    pub flip_horizontally: GLint,
-    pub target_dimensions: GLint,
-    pub object_texture_dimensions: GLint,
-    pub object_texture_offset: GLint,
-    pub object_dimensions: GLint,
-    pub object_position: GLint,
-    pub object_scale: GLint,
-    pub depth: GLint,
+#[derive(Debug)]
+pub struct LinesUniforms {
+    pub color: GLint,
+    pub start_end: GLint,
 }

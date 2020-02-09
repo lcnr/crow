@@ -1,12 +1,14 @@
 use gl::types::*;
 
-use crate::{backend::shader::Uniforms, color, BlendMode};
+use crate::{
+    backend::shader::{LinesUniforms, Uniforms},
+    color, BlendMode,
+};
 
 #[derive(Debug)]
 pub struct OpenGlState {
     uniforms: Uniforms,
-    debug_lines_color_uniform: GLint,
-    debug_lines_start_end_uniform: GLint,
+    lines_uniforms: LinesUniforms,
     program: GLuint,
     target_dimensions: (u32, u32),
     viewport_dimensions: (u32, u32),
@@ -31,8 +33,7 @@ pub struct OpenGlState {
 impl OpenGlState {
     pub fn new(
         uniforms: Uniforms,
-        debug_lines_color_uniform: GLint,
-        debug_lines_start_end_uniform: GLint,
+        lines_uniforms: LinesUniforms,
         (program, vao): (GLuint, GLuint),
         window_dimensions: (u32, u32),
     ) -> Self {
@@ -114,8 +115,7 @@ impl OpenGlState {
 
             Self {
                 uniforms,
-                debug_lines_color_uniform,
-                debug_lines_start_end_uniform,
+                lines_uniforms,
                 program,
                 target_dimensions,
                 viewport_dimensions,
@@ -343,7 +343,7 @@ impl OpenGlState {
         }
         unsafe {
             gl::Uniform4f(
-                self.debug_lines_color_uniform,
+                self.lines_uniforms.color,
                 debug_line_color.0,
                 debug_line_color.1,
                 debug_line_color.2,
@@ -357,7 +357,7 @@ impl OpenGlState {
         }
         unsafe {
             gl::Uniform4f(
-                self.debug_lines_start_end_uniform,
+                self.lines_uniforms.start_end,
                 debug_line_start_end.0,
                 debug_line_start_end.1,
                 debug_line_start_end.2,
