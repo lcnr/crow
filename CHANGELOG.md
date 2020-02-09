@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.2.1
+### 0.2.2
+
+- improve draw_line performance
+
+### 0.2.1
 
 - improve docs + refactor
 
