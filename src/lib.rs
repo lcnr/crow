@@ -398,8 +398,20 @@ impl Texture {
     ///
     /// This function panics if part of the requested section would be outside of the original texture.
     pub fn get_section(&self, position: (u32, u32), size: (u32, u32)) -> Texture {
-        assert!(position.0 + size.0 <= self.size.0);
-        assert!(position.1 + size.1 <= self.size.1);
+        assert!(
+            position.0 + size.0 <= self.size.0,
+            "invalid section width: {} + {} > {}",
+            position.0,
+            size.0,
+            self.size.0
+        );
+        assert!(
+            position.1 + size.1 <= self.size.1,
+            "invalid section heigth: {} + {} > {}",
+            position.1,
+            size.1,
+            self.size.1
+        );
 
         Texture {
             inner: Rc::clone(&self.inner),
