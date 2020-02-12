@@ -645,7 +645,8 @@ impl Default for BlendMode {
 
 /// How exactly should a texture be drawn?
 ///
-/// This struct has a hidden unstable field, so it can only be constructed using FRU.
+/// This struct has a hidden unstable field as it
+/// should only be constructed using functional record update (FRU).
 ///
 /// # Examples
 ///
