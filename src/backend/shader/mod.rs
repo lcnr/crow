@@ -203,43 +203,37 @@ pub struct Uniforms {
 }
 
 #[rustfmt::skip]
-static LINES_VERTEX_DATA: [GLfloat; 4] = [
-    1.0, 0.0,
-    0.0, 1.0,
+static LINES_VERTEX_DATA: [GLfloat; 8] = [
+    1.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 1.0,
 ];
 
+#[rustfmt::skip]
+static RECTANGLES_VERTEX_DATA: [GLfloat; 20] = [
+    1.0, 1.0, 0.0, 0.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    0.0, 1.0, 1.0, 0.0,
+    1.0, 1.0, 0.0, 0.0,
+];
+
+/// vao 0 is for drawing lines
+/// vao 1 for drawing rectangles
 #[derive(Debug)]
-pub struct LinesProgram {
+pub struct DebugProgram {
     pub id: GLuint,
-    pub vao: GLuint,
-    pub vbo: GLuint,
+    pub vao: [GLuint; 2],
+    pub vbo: [GLuint; 2],
 }
 
-impl LinesProgram {
-    pub fn new() -> Result<(Self, LinesUniforms), ErrDontCare> {
+impl DebugProgram {
+    pub fn new() -> Result<(Self, DebugUniforms), ErrDontCare> {
         let program = compile_program(
-            include_str!("vertex_lines.glsl"),
-            include_str!("fragment_lines.glsl"),
+            include_str!("vertex_debug.glsl"),
+            include_str!("fragment_debug.glsl"),
         )?;
 
-        let mut vao = 0;
-        let mut vbo = 0;
-
-        unsafe {
-            // Create Vertex Array Object
-            gl::GenVertexArrays(1, &mut vao);
-            gl::BindVertexArray(vao);
-
-            // Create a Vertex Buffer Object and copy the vertex data to it
-            gl::GenBuffers(1, &mut vbo);
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                mem::size_of_val(&LINES_VERTEX_DATA) as GLsizeiptr,
-                &LINES_VERTEX_DATA[0] as *const _ as *const _,
-                gl::STATIC_DRAW,
-            );
-
+        let pos_attr = unsafe {
             // Use shader program
             gl::UseProgram(program);
             let color_str = CString::new("color").unwrap();
@@ -247,11 +241,49 @@ impl LinesProgram {
 
             // Specify the layout of the vertex data
             let pos_str = CString::new("position").unwrap();
-            let pos_attr = gl::GetAttribLocation(program, pos_str.as_ptr());
+            gl::GetAttribLocation(program, pos_str.as_ptr())
+        };
+
+        let mut vao = [0; 2];
+        let mut vbo = [0; 2];
+
+        unsafe {
+            // Create Vertex Array and Buffer Objects
+            gl::GenVertexArrays(2, &mut vao as *mut [GLuint] as *mut GLuint);
+            gl::GenBuffers(2, &mut vbo as *mut [GLuint] as *mut GLuint);
+
+            // initialize lines vao
+            gl::BindVertexArray(vao[0]);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo[0]);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                mem::size_of_val(&LINES_VERTEX_DATA) as GLsizeiptr,
+                &LINES_VERTEX_DATA[0] as *const _ as *const _,
+                gl::STATIC_DRAW,
+            );
             gl::EnableVertexAttribArray(pos_attr as GLuint);
             gl::VertexAttribPointer(
                 pos_attr as GLuint,
-                2,
+                4,
+                gl::FLOAT,
+                gl::FALSE as GLboolean,
+                0,
+                ptr::null(),
+            );
+
+            // initialize rectangles vao
+            gl::BindVertexArray(vao[1]);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo[1]);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                mem::size_of_val(&RECTANGLES_VERTEX_DATA) as GLsizeiptr,
+                &RECTANGLES_VERTEX_DATA[0] as *const _ as *const _,
+                gl::STATIC_DRAW,
+            );
+            gl::EnableVertexAttribArray(pos_attr as GLuint);
+            gl::VertexAttribPointer(
+                pos_attr as GLuint,
+                4,
                 gl::FLOAT,
                 gl::FALSE as GLboolean,
                 0,
@@ -281,7 +313,7 @@ impl LinesProgram {
                 vao,
                 vbo,
             },
-            LinesUniforms {
+            DebugUniforms {
                 color: color_uniform,
                 start_end,
             },
@@ -289,18 +321,18 @@ impl LinesProgram {
     }
 }
 
-impl Drop for LinesProgram {
+impl Drop for DebugProgram {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteProgram(self.id);
-            gl::DeleteBuffers(1, &self.vbo);
-            gl::DeleteVertexArrays(1, &self.vao);
+            gl::DeleteBuffers(2, &self.vbo as *const [GLuint] as *const GLuint);
+            gl::DeleteVertexArrays(2, &self.vao as *const [GLuint] as *const GLuint);
         }
     }
 }
 
 #[derive(Debug)]
-pub struct LinesUniforms {
+pub struct DebugUniforms {
     pub color: GLint,
     pub start_end: GLint,
 }

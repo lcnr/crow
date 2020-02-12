@@ -213,8 +213,17 @@ fn debug_lines(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
-    ctx.draw_line(&mut target, (2, 2), (2, 10), (1.0, 0.0, 0.0, 1.0))?;
-    ctx.draw_line(&mut target, (4, 9), (9, 9), (1.0, 0.0, 0.0, 1.0))?;
+    ctx.debug_line(&mut target, (2, 2), (2, 8), (1.0, 0.0, 0.0, 1.0))?;
+    ctx.debug_line(&mut target, (4, 9), (8, 9), (1.0, 0.0, 0.0, 1.0))?;
+
+    Ok(target.get_image_data(ctx))
+}
+
+fn debug_rectangle(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
+    let mut target = Texture::new(ctx, (10, 10))?;
+    ctx.clear_color(&mut target, (1.0, 0.0, 0.0, 1.0))?;
+
+    ctx.debug_rectangle(&mut target, (1, 1), (4, 3), (0.0, 1.0, 0.0, 1.0))?;
 
     Ok(target.get_image_data(ctx))
 }
@@ -224,8 +233,8 @@ fn lines_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Offset::new(&mut image, (-1, -2));
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
-    ctx.draw_line(&mut target, (1, 0), (1, 8), (1.0, 0.0, 0.0, 1.0))?;
-    ctx.draw_line(&mut target, (3, 7), (8, 7), (1.0, 0.0, 0.0, 1.0))?;
+    ctx.debug_line(&mut target, (1, 0), (1, 8), (1.0, 0.0, 0.0, 1.0))?;
+    ctx.debug_line(&mut target, (3, 7), (7, 7), (1.0, 0.0, 0.0, 1.0))?;
 
     Ok(image.get_image_data(ctx))
 }
@@ -301,6 +310,7 @@ fn main() {
     runner.add("section_scaled", section_scaled);
     runner.add("zero_section", zero_section);
     runner.add("debug_lines", debug_lines);
+    runner.add("debug_rectangle", debug_rectangle);
     runner.add("lines_offset", lines_offset);
 
     std::process::exit(runner.run())

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- rename `Context::draw_line` to `Context::debug_line`.
+- add `fn Context::debug_rectangle`.
+- add required trait method `fn DrawTarget::receive_rectangle`.
+
 ### 0.2.2
 
 - improve draw_line performance

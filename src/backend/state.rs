@@ -1,15 +1,16 @@
 use gl::types::*;
 
 use crate::{
-    backend::shader::{LinesUniforms, Uniforms},
+    backend::shader::{DebugUniforms, Uniforms},
     color, BlendMode,
 };
 
 #[derive(Debug)]
 pub struct OpenGlState {
     uniforms: Uniforms,
-    lines_uniforms: LinesUniforms,
+    debug_uniforms: DebugUniforms,
     program: GLuint,
+    vao: GLuint,
     target_dimensions: (u32, u32),
     viewport_dimensions: (u32, u32),
     blend_mode: BlendMode,
@@ -26,14 +27,14 @@ pub struct OpenGlState {
     invert_color: bool,
     flip_vertically: bool,
     flip_horizontally: bool,
-    debug_line_color: (f32, f32, f32, f32),
-    debug_line_start_end: (f32, f32, f32, f32),
+    debug_color: (f32, f32, f32, f32),
+    debug_start_end: (f32, f32, f32, f32),
 }
 
 impl OpenGlState {
     pub fn new(
         uniforms: Uniforms,
-        lines_uniforms: LinesUniforms,
+        debug_uniforms: DebugUniforms,
         (program, vao): (GLuint, GLuint),
         window_dimensions: (u32, u32),
     ) -> Self {
@@ -115,7 +116,8 @@ impl OpenGlState {
 
             Self {
                 uniforms,
-                lines_uniforms,
+                vao,
+                debug_uniforms,
                 program,
                 target_dimensions,
                 viewport_dimensions,
@@ -133,17 +135,25 @@ impl OpenGlState {
                 invert_color,
                 flip_vertically,
                 flip_horizontally,
-                debug_line_color: (0.0, 0.0, 0.0, 0.0),
-                debug_line_start_end: (std::f32::MIN, std::f32::MIN, std::f32::MIN, std::f32::MIN),
+                debug_color: (0.0, 0.0, 0.0, 0.0),
+                debug_start_end: (std::f32::MIN, std::f32::MIN, std::f32::MIN, std::f32::MIN),
             }
         }
     }
 
-    pub fn update_program(&mut self, program: GLuint, vao: GLuint) {
+    pub fn update_program(&mut self, program: GLuint) {
         if program != self.program {
             self.program = program;
             unsafe {
                 gl::UseProgram(program);
+            }
+        }
+    }
+
+    pub fn update_vao(&mut self, vao: GLuint) {
+        if vao != self.vao {
+            self.vao = vao;
+            unsafe {
                 gl::BindVertexArray(vao);
             }
         }
@@ -337,31 +347,31 @@ impl OpenGlState {
         }
     }
 
-    pub fn update_debug_line_color(&mut self, debug_line_color: (f32, f32, f32, f32)) {
-        if debug_line_color != self.debug_line_color {
-            self.debug_line_color = debug_line_color;
+    pub fn update_debug_color(&mut self, debug_color: (f32, f32, f32, f32)) {
+        if debug_color != self.debug_color {
+            self.debug_color = debug_color;
         }
         unsafe {
             gl::Uniform4f(
-                self.lines_uniforms.color,
-                debug_line_color.0,
-                debug_line_color.1,
-                debug_line_color.2,
-                debug_line_color.3,
+                self.debug_uniforms.color,
+                debug_color.0,
+                debug_color.1,
+                debug_color.2,
+                debug_color.3,
             );
         }
     }
-    pub fn update_debug_line_start_end(&mut self, debug_line_start_end: (f32, f32, f32, f32)) {
-        if debug_line_start_end != self.debug_line_start_end {
-            self.debug_line_start_end = debug_line_start_end;
+    pub fn update_debug_start_end(&mut self, debug_start_end: (f32, f32, f32, f32)) {
+        if debug_start_end != self.debug_start_end {
+            self.debug_start_end = debug_start_end;
         }
         unsafe {
             gl::Uniform4f(
-                self.lines_uniforms.start_end,
-                debug_line_start_end.0,
-                debug_line_start_end.1,
-                debug_line_start_end.2,
-                debug_line_start_end.3,
+                self.debug_uniforms.start_end,
+                debug_start_end.0,
+                debug_start_end.1,
+                debug_start_end.2,
+                debug_start_end.3,
             );
         }
     }

@@ -21,7 +21,7 @@ fn debug_lines(c: &mut Criterion) {
             ctx.clear_color(&mut surface, (0.0, 0.0, 0.0, 1.0)).unwrap();
 
             for i in (0..100).map(|i| i * 2) {
-                ctx.draw_line(
+                ctx.debug_line(
                     &mut surface,
                     (i, i + 10),
                     (i + 20, i + 10),

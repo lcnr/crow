@@ -62,6 +62,27 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
             color,
         )
     }
+
+    fn receive_rectangle(
+        &mut self,
+        ctx: &mut Context,
+        lower_left: (i32, i32),
+        upper_right: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        self.inner.receive_rectangle(
+            ctx,
+            (
+                lower_left.0 * self.scale.0 as i32,
+                lower_left.1 * self.scale.1 as i32,
+            ),
+            (
+                upper_right.0 * self.scale.0 as i32,
+                upper_right.1 * self.scale.1 as i32,
+            ),
+            color,
+        )
+    }
 }
 
 /// Can be used as a [`DrawTarget`] which offsets the `position` of each draw call by a given `offset`.
@@ -115,6 +136,21 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
             ctx,
             (from.0 - self.offset.0, from.1 - self.offset.1),
             (to.0 - self.offset.0, to.1 - self.offset.1),
+            color,
+        )
+    }
+
+    fn receive_rectangle(
+        &mut self,
+        ctx: &mut Context,
+        lower_left: (i32, i32),
+        upper_right: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) -> Result<(), ErrDontCare> {
+        self.inner.receive_rectangle(
+            ctx,
+            (lower_left.0 - self.offset.0, lower_left.1 - self.offset.1),
+            (upper_right.0 - self.offset.0, upper_right.1 - self.offset.1),
             color,
         )
     }

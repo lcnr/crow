@@ -15,7 +15,7 @@ pub(crate) mod tex;
 
 use tex::RawTexture;
 
-use shader::{LinesProgram, Program};
+use shader::{DebugProgram, Program};
 use state::OpenGlState;
 
 extern "system" fn debug_callback(
@@ -82,7 +82,7 @@ pub struct Backend {
     events_loop: EventsLoop,
     gl_window: ContextWrapper<PossiblyCurrent, Window>,
     program: Program,
-    lines_program: LinesProgram,
+    debug_program: DebugProgram,
 }
 
 impl Backend {
@@ -110,11 +110,11 @@ impl Backend {
         }
 
         let (program, uniforms) = Program::new()?;
-        let (lines_program, lines_uniforms) = LinesProgram::new()?;
+        let (debug_program, debug_uniforms) = DebugProgram::new()?;
 
         let state = OpenGlState::new(
             uniforms,
-            lines_uniforms,
+            debug_uniforms,
             (program.id, program.vao),
             gl_window
                 .window()
@@ -127,7 +127,7 @@ impl Backend {
             events_loop,
             gl_window,
             program,
-            lines_program,
+            debug_program,
         })
     }
 
