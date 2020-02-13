@@ -160,17 +160,17 @@ impl Program {
 
     pub fn get_uniforms(&self) -> Uniforms {
         Uniforms {
-            object: self.get_uniform_id("object"),
+            source: self.get_uniform_id("source"),
             color_modulation: self.get_uniform_id("color_modulation"),
             invert_color: self.get_uniform_id("invert_color"),
             flip_vertically: self.get_uniform_id("flip_vertically"),
             flip_horizontally: self.get_uniform_id("flip_horizontally"),
             target_dimensions: self.get_uniform_id("target_dimensions"),
-            object_texture_dimensions: self.get_uniform_id("object_texture_dimensions"),
-            object_texture_offset: self.get_uniform_id("object_texture_offset"),
-            object_dimensions: self.get_uniform_id("object_dimensions"),
-            object_position: self.get_uniform_id("object_position"),
-            object_scale: self.get_uniform_id("object_scale"),
+            source_texture_dimensions: self.get_uniform_id("source_texture_dimensions"),
+            source_texture_offset: self.get_uniform_id("source_texture_offset"),
+            source_dimensions: self.get_uniform_id("source_dimensions"),
+            source_position: self.get_uniform_id("source_position"),
+            source_scale: self.get_uniform_id("source_scale"),
             depth: self.get_uniform_id("depth"),
         }
     }
@@ -188,17 +188,17 @@ impl Drop for Program {
 
 #[derive(Debug, Clone)]
 pub struct Uniforms {
-    pub object: GLint,
+    pub source: GLint,
     pub color_modulation: GLint,
     pub invert_color: GLint,
     pub flip_vertically: GLint,
     pub flip_horizontally: GLint,
     pub target_dimensions: GLint,
-    pub object_texture_dimensions: GLint,
-    pub object_texture_offset: GLint,
-    pub object_dimensions: GLint,
-    pub object_position: GLint,
-    pub object_scale: GLint,
+    pub source_texture_dimensions: GLint,
+    pub source_texture_offset: GLint,
+    pub source_dimensions: GLint,
+    pub source_position: GLint,
+    pub source_scale: GLint,
     pub depth: GLint,
 }
 

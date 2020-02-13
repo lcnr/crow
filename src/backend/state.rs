@@ -18,12 +18,12 @@ pub struct OpenGlState {
     depth: f32,
     framebuffer: GLuint,
     texture: GLuint,
-    object_scale: (u32, u32),
+    source_scale: (u32, u32),
     color_modulation: [[f32; 4]; 4],
-    object_texture_dimensions: (u32, u32),
-    object_texture_offset: (u32, u32),
-    object_position: (i32, i32),
-    object_dimensions: (u32, u32),
+    source_texture_dimensions: (u32, u32),
+    source_texture_offset: (u32, u32),
+    source_position: (i32, i32),
+    source_dimensions: (u32, u32),
     invert_color: bool,
     flip_vertically: bool,
     flip_horizontally: bool,
@@ -66,8 +66,8 @@ impl OpenGlState {
             let texture = 0;
             gl::BindTexture(gl::TEXTURE_2D, texture);
 
-            let object_scale = (1, 1);
-            gl::Uniform2ui(uniforms.object_scale, object_scale.0, object_scale.1);
+            let source_scale = (1, 1);
+            gl::Uniform2ui(uniforms.source_scale, source_scale.0, source_scale.1);
 
             let color_modulation = color::IDENTITY;
             gl::UniformMatrix4fv(
@@ -77,32 +77,32 @@ impl OpenGlState {
                 &color_modulation as *const _ as *const f32,
             );
 
-            let object_texture_dimensions = (128, 128);
+            let source_texture_dimensions = (128, 128);
             gl::Uniform2f(
-                uniforms.object_texture_dimensions,
-                object_texture_dimensions.0 as f32,
-                object_texture_dimensions.1 as f32,
+                uniforms.source_texture_dimensions,
+                source_texture_dimensions.0 as f32,
+                source_texture_dimensions.1 as f32,
             );
 
-            let object_texture_offset = (0, 0);
+            let source_texture_offset = (0, 0);
             gl::Uniform2ui(
-                uniforms.object_texture_offset,
-                object_texture_offset.0,
-                object_texture_offset.1,
+                uniforms.source_texture_offset,
+                source_texture_offset.0,
+                source_texture_offset.1,
             );
 
-            let object_position = (0, 0);
+            let source_position = (0, 0);
             gl::Uniform2f(
-                uniforms.object_position,
-                object_position.0 as f32,
-                object_position.1 as f32,
+                uniforms.source_position,
+                source_position.0 as f32,
+                source_position.1 as f32,
             );
 
-            let object_dimensions = (128, 128);
+            let source_dimensions = (128, 128);
             gl::Uniform2ui(
-                uniforms.object_dimensions,
-                object_dimensions.0,
-                object_dimensions.1,
+                uniforms.source_dimensions,
+                source_dimensions.0,
+                source_dimensions.1,
             );
 
             let invert_color = false;
@@ -126,12 +126,12 @@ impl OpenGlState {
                 depth,
                 framebuffer,
                 texture,
-                object_scale,
+                source_scale,
                 color_modulation,
-                object_texture_dimensions,
-                object_texture_offset,
-                object_position,
-                object_dimensions,
+                source_texture_dimensions,
+                source_texture_offset,
+                source_position,
+                source_dimensions,
                 invert_color,
                 flip_vertically,
                 flip_horizontally,
@@ -241,14 +241,14 @@ impl OpenGlState {
         }
     }
 
-    pub fn update_object_scale(&mut self, object_scale: (u32, u32)) {
-        if object_scale != self.object_scale {
-            self.object_scale = object_scale;
+    pub fn update_source_scale(&mut self, source_scale: (u32, u32)) {
+        if source_scale != self.source_scale {
+            self.source_scale = source_scale;
             unsafe {
                 gl::Uniform2ui(
-                    self.uniforms.object_scale,
-                    self.object_scale.0,
-                    self.object_scale.1,
+                    self.uniforms.source_scale,
+                    self.source_scale.0,
+                    self.source_scale.1,
                 );
             }
         }
@@ -268,53 +268,53 @@ impl OpenGlState {
         }
     }
 
-    pub fn update_object_texture_dimensions(&mut self, object_texture_dimensions: (u32, u32)) {
-        if object_texture_dimensions != self.object_texture_dimensions {
-            self.object_texture_dimensions = object_texture_dimensions;
+    pub fn update_source_texture_dimensions(&mut self, source_texture_dimensions: (u32, u32)) {
+        if source_texture_dimensions != self.source_texture_dimensions {
+            self.source_texture_dimensions = source_texture_dimensions;
             unsafe {
                 gl::Uniform2f(
-                    self.uniforms.object_texture_dimensions,
-                    self.object_texture_dimensions.0 as f32,
-                    self.object_texture_dimensions.1 as f32,
+                    self.uniforms.source_texture_dimensions,
+                    self.source_texture_dimensions.0 as f32,
+                    self.source_texture_dimensions.1 as f32,
                 );
             }
         }
     }
 
-    pub fn update_object_texture_offset(&mut self, object_texture_offset: (u32, u32)) {
-        if object_texture_offset != self.object_texture_offset {
-            self.object_texture_offset = object_texture_offset;
+    pub fn update_source_texture_offset(&mut self, source_texture_offset: (u32, u32)) {
+        if source_texture_offset != self.source_texture_offset {
+            self.source_texture_offset = source_texture_offset;
             unsafe {
                 gl::Uniform2ui(
-                    self.uniforms.object_texture_offset,
-                    self.object_texture_offset.0,
-                    self.object_texture_offset.1,
+                    self.uniforms.source_texture_offset,
+                    self.source_texture_offset.0,
+                    self.source_texture_offset.1,
                 );
             }
         }
     }
 
-    pub fn update_object_position(&mut self, object_position: (i32, i32)) {
-        if object_position != self.object_position {
-            self.object_position = object_position;
+    pub fn update_source_position(&mut self, source_position: (i32, i32)) {
+        if source_position != self.source_position {
+            self.source_position = source_position;
             unsafe {
                 gl::Uniform2f(
-                    self.uniforms.object_position,
-                    self.object_position.0 as f32,
-                    self.object_position.1 as f32,
+                    self.uniforms.source_position,
+                    self.source_position.0 as f32,
+                    self.source_position.1 as f32,
                 );
             }
         }
     }
 
-    pub fn update_object_dimensions(&mut self, object_dimensions: (u32, u32)) {
-        if object_dimensions != self.object_dimensions {
-            self.object_dimensions = object_dimensions;
+    pub fn update_source_dimensions(&mut self, source_dimensions: (u32, u32)) {
+        if source_dimensions != self.source_dimensions {
+            self.source_dimensions = source_dimensions;
             unsafe {
                 gl::Uniform2ui(
-                    self.uniforms.object_dimensions,
-                    self.object_dimensions.0,
-                    self.object_dimensions.1,
+                    self.uniforms.source_dimensions,
+                    self.source_dimensions.0,
+                    self.source_dimensions.1,
                 );
             }
         }

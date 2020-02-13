@@ -130,8 +130,8 @@ fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
-    let object = Texture::load(ctx, "textures/section_test.png")?;
-    let source = object.get_section((3, 4), (3, 2));
+    let source = Texture::load(ctx, "textures/section_test.png")?;
+    let source = source.get_section((3, 4), (3, 2));
 
     ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default())?;
 
@@ -142,8 +142,8 @@ fn section_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
-    let object = Texture::load(ctx, "textures/section_test.png")?;
-    let source = object.get_section((3, 4), (3, 2));
+    let source = Texture::load(ctx, "textures/section_test.png")?;
+    let source = source.get_section((3, 4), (3, 2));
 
     ctx.draw(
         &mut Offset::new(&mut target, (-2, -3)),
@@ -159,8 +159,8 @@ fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
-    let object = Texture::load(ctx, "textures/section_test.png")?;
-    let source = object.get_section((3, 4), (3, 2));
+    let source = Texture::load(ctx, "textures/section_test.png")?;
+    let source = source.get_section((3, 4), (3, 2));
 
     ctx.draw(
         &mut target,
@@ -180,8 +180,8 @@ fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
-    let object = Texture::load(ctx, "textures/section_test.png")?;
-    let source = object.get_section((3, 4), (3, 2));
+    let source = Texture::load(ctx, "textures/section_test.png")?;
+    let source = source.get_section((3, 4), (3, 2));
 
     ctx.draw(
         &mut Scaled::new(&mut target, (2, 3)),
@@ -201,8 +201,8 @@ fn zero_section(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
     ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
 
-    let object = Texture::load(ctx, "textures/section_test.png")?;
-    let source = object.get_section((3, 4), (0, 0));
+    let source = Texture::load(ctx, "textures/section_test.png")?;
+    let source = source.get_section((3, 4), (0, 0));
 
     ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default())?;
 
