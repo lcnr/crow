@@ -334,6 +334,8 @@ impl Context {
 }
 
 /// A handle which can be used to draw to the window.
+/// 
+/// Created by calling `Context::window_surface()`.
 #[derive(Debug)]
 pub struct WindowSurface {
     _marker: PhantomData<*const ()>,
