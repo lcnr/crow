@@ -21,23 +21,24 @@ fn main() -> Result<(), crow::Error> {
     let mut fin = false;
     let mut offset = 0;
     loop {
-        ctx.events_loop().poll_events(|event| match event {
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => fin = true,
-                WindowEvent::KeyboardInput { input, .. } => {
-                    if input.state == ElementState::Pressed
-                        && input.virtual_keycode == Some(VirtualKeyCode::Space)
-                    {
-                        offset = 1;
-                    } else if input.state == ElementState::Released
-                        && input.virtual_keycode == Some(VirtualKeyCode::Space)
-                    {
-                        offset = 0;
+        ctx.events_loop().poll_events(|event| {
+            if let Event::WindowEvent { event, .. } = event {
+                match event {
+                    WindowEvent::CloseRequested => fin = true,
+                    WindowEvent::KeyboardInput { input, .. } => {
+                        if input.state == ElementState::Pressed
+                            && input.virtual_keycode == Some(VirtualKeyCode::Space)
+                        {
+                            offset = 1;
+                        } else if input.state == ElementState::Released
+                            && input.virtual_keycode == Some(VirtualKeyCode::Space)
+                        {
+                            offset = 0;
+                        }
                     }
+                    _ => (),
                 }
-                _ => (),
-            },
-            _ => (),
+            }
         });
         ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0))?;
         ctx.clear_color(&mut target_texture, (0.0, 0.0, 0.0, 0.0))?;
@@ -45,7 +46,7 @@ fn main() -> Result<(), crow::Error> {
         ctx.draw(
             &mut target_texture,
             &texture,
-            (0 - offset, 0 + offset),
+            (0 - offset, offset),
             &DrawConfig {
                 blend_mode: BlendMode::Additive,
                 color_modulation: color::RED,
@@ -65,7 +66,7 @@ fn main() -> Result<(), crow::Error> {
         ctx.draw(
             &mut target_texture,
             &texture,
-            (0 + offset, 0 - offset),
+            (offset, 0 - offset),
             &DrawConfig {
                 blend_mode: BlendMode::Additive,
                 color_modulation: color::BLUE,

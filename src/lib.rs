@@ -35,7 +35,7 @@ impl<T> fmt::Debug for SkipDebug<T> {
 }
 
 /// A trait implemented by types upon which can be drawn.
-/// 
+///
 /// It is recommended to use the corresponding methods of `Context`
 /// instead of calling the methods of this trait directly.
 pub trait DrawTarget {
@@ -337,7 +337,7 @@ impl Context {
 }
 
 /// A handle which can be used to draw to the window.
-/// 
+///
 /// Created by calling `Context::window_surface()`.
 #[derive(Debug)]
 pub struct WindowSurface {

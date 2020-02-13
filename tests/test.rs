@@ -10,7 +10,9 @@ use crow::{
     Context, DrawConfig, Texture,
 };
 
-pub fn test(name: &str, f: fn(&mut Context) -> Result<RgbaImage, crow::Error>) -> Result<(), ()> {
+type TestFn = fn(&mut Context) -> Result<RgbaImage, crow::Error>;
+
+pub fn test(name: &str, f: TestFn) -> Result<(), ()> {
     let mut ctx = Context::new(
         WindowBuilder::new()
             .with_dimensions(From::from((720, 480)))
@@ -240,15 +242,10 @@ fn lines_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
 }
 
 #[derive(Default)]
-struct TestRunner(
-    Vec<(
-        &'static str,
-        fn(&mut Context) -> Result<RgbaImage, crow::Error>,
-    )>,
-);
+struct TestRunner(Vec<(&'static str, TestFn)>);
 
 impl TestRunner {
-    fn add(&mut self, name: &'static str, f: fn(&mut Context) -> Result<RgbaImage, crow::Error>) {
+    fn add(&mut self, name: &'static str, f: TestFn) {
         self.0.push((name, f))
     }
 
