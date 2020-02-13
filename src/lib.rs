@@ -668,7 +668,7 @@ impl Default for BlendMode {
 /// ```
 #[derive(Debug, Clone)]
 pub struct DrawConfig {
-    /// The scale of the drawn texture in pixels.
+    /// The scale of the drawn texture in drawn pixels per source pixel.
     pub scale: (u32, u32),
     /// If the texture should be flipped on the y axis.
     pub flip_vertically: bool,
