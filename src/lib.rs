@@ -35,6 +35,9 @@ impl<T> fmt::Debug for SkipDebug<T> {
 }
 
 /// A trait implemented by types upon which can be drawn.
+/// 
+/// It is recommended to use the corresponding methods of `Context`
+/// instead of calling the methods of this trait directly.
 pub trait DrawTarget {
     /// Draws the `texture` onto `self`.
     fn receive_draw(
