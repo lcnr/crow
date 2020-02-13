@@ -3,6 +3,8 @@
 A simple and fairly efficient pixel based 2D graphics library. **crow** is designed to be easy to use and
 should allow users to do nearly everything they want without requiring custom renderers or unsafe code.
 
+The most recent documentation can be found [here](https://docs.rs/crow/0.3.0/crow/).
+
 ## Examples
 
 ```rust
