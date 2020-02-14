@@ -1,5 +1,16 @@
 # Crow
 
+[![Documentation][di]][dl] [![Crates.io][ri]][rl] [![License: MIT][li]][ll]
+
+[di]: https://docs.rs/crow/badge.svg
+[dl]: https://docs.rs/crow
+
+[ri]: https://img.shields.io/crates/v/crow.svg
+[rl]: https://crates.io/crates/crow/
+
+[li]: https://img.shields.io/badge/License-MIT-blue.svg
+[ll]: ./LICENSE
+
 A simple and fairly efficient pixel based 2D graphics library. **crow** is designed to be easy to use and
 should allow users to do nearly everything they want without requiring custom renderers or unsafe code.
 
