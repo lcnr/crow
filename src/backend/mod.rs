@@ -80,25 +80,25 @@ extern "system" fn debug_callback(
 pub struct Backend {
     state: OpenGlState,
     events_loop: EventsLoop,
-    gl_window: ContextWrapper<PossiblyCurrent, Window>,
+    gl_context: ContextWrapper<PossiblyCurrent, Window>,
     program: Program,
     debug_program: DebugProgram,
 }
 
 impl Backend {
     pub fn initialize(window: WindowBuilder, events_loop: EventsLoop) -> Result<Self, ErrDontCare> {
-        let gl_window = glutin::ContextBuilder::new()
+        let gl_context = glutin::ContextBuilder::new()
             .with_depth_buffer(16)
             .with_vsync(false)
             .build_windowed(window, &events_loop)
             .unwrap();
 
         // It is essential to make the context current before calling `gl::load_with`.
-        let gl_window = unsafe { gl_window.make_current() }.unwrap();
+        let gl_context = unsafe { gl_context.make_current() }.unwrap();
 
         // Load the OpenGL function pointers
         // TODO: `as *const _` will not be needed once glutin is updated to the latest gl version
-        gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
+        gl::load_with(|symbol| gl_context.get_proc_address(symbol) as *const _);
 
         unsafe {
             gl::Enable(gl::DEBUG_OUTPUT);
@@ -116,7 +116,7 @@ impl Backend {
             uniforms,
             debug_uniforms,
             (program.id, program.vao),
-            gl_window
+            gl_context
                 .window()
                 .get_inner_size()
                 .map_or((1024, 720), |s| s.into()),
@@ -125,24 +125,24 @@ impl Backend {
         Ok(Self {
             state,
             events_loop,
-            gl_window,
+            gl_context,
             program,
             debug_program,
         })
     }
 
     pub fn resize_window(&mut self, width: u32, height: u32) {
-        self.gl_window
+        self.gl_context
             .window()
             .set_inner_size(From::from((width, height)))
     }
 
     pub fn window(&self) -> &Window {
-        self.gl_window.window()
+        self.gl_context.window()
     }
 
     pub fn window_dimensions(&self) -> (u32, u32) {
-        self.gl_window.window().get_inner_size().unwrap().into()
+        self.gl_context.window().get_inner_size().unwrap().into()
     }
 
     pub fn take_screenshot(&mut self, (width, height): (u32, u32)) -> Vec<u8> {
@@ -220,7 +220,7 @@ impl Backend {
     }
 
     pub fn finalize_frame(&mut self) -> Result<(), ErrDontCare> {
-        self.gl_window.swap_buffers().unwrap();
+        self.gl_context.swap_buffers().unwrap();
         self.state.update_framebuffer(0);
         unsafe {
             gl::Clear(gl::DEPTH_BUFFER_BIT);
