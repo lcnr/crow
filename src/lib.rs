@@ -1,5 +1,43 @@
-#![warn(clippy::clone_on_ref_ptr)]
 //! A pixel perfect 2D graphics library
+//!
+//! # Examples
+//!
+//! ```no_run
+//! use crow::{
+//!     glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
+//!     Context, DrawConfig, Texture,
+//! };
+//!
+//! fn main() -> Result<(), crow::Error> {
+//!     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
+//!
+//!     let texture = Texture::load(&mut ctx, "path/to/texture.png").expect("Unable to load texture");
+//!     let mut surface = ctx.window_surface();
+//!
+//!     let mut fin = false;
+//!     loop {
+//!         ctx.events_loop().poll_events(|event| match event {
+//!             Event::WindowEvent {
+//!                 event: WindowEvent::CloseRequested,
+//!                 ..
+//!             } => fin = true,
+//!             _ => (),
+//!         });
+//!
+//!         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0))?;
+//!         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default())?;
+//!
+//!         ctx.finalize_frame()?;
+//!
+//!         if fin {
+//!             break;
+//!         }
+//!     }
+//!
+//!     Ok(())
+//! }
+//! ```
+#![warn(clippy::clone_on_ref_ptr)]
 use std::{
     any, fmt,
     marker::PhantomData,
@@ -13,6 +51,12 @@ use static_assertions::assert_not_impl_any;
 use glutin::{EventsLoop, Window, WindowBuilder};
 
 use image::RgbaImage;
+
+#[cfg(all(feature = "serde", not(feature = "serde1")))]
+compile_error!("Tried using the feature `serde` directly, consider enabling `serde1` instead");
+
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
 
 mod backend;
 pub mod color;
@@ -633,6 +677,7 @@ impl DrawTarget for Texture {
 
 /// Used in `DrawConfig` to specify how
 /// each pixel should be draw onto the target.
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum BlendMode {
@@ -671,6 +716,7 @@ impl Default for BlendMode {
 ///     ..Default::default()
 /// };
 /// ```
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct DrawConfig {
     /// The scale of the drawn texture in drawn pixels per source pixel.

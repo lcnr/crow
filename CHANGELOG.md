@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- add feature `serde1`.
+
 ## 0.3.0
 
 - rename `Context::draw_line` to `Context::debug_line`.

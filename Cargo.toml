@@ -7,14 +7,27 @@ keywords = ["game", "rendering", "2D", "gl"]
 categories = [ "game-development", "graphics", "rendering", "rendering::engine" ]
 license = "MIT"
 repository = "https://github.com/lcnr/crow"
+documentation = "https://docs.rs/crow/"
 readme = "README.md"
 edition = "2018"
+
+[package.metadata.docs.rs]
+features = ["serde"]
 
 [dependencies]
 gl = "0.14"
 glutin = "0.21"
 image = "0.22"
 static_assertions = "1"
+
+[dependencies.serde]
+package = "serde"
+version = "1"
+features = ["derive"]
+optional = true
+
+[features]
+serde1 = ["serde", "glutin/serde"]
 
 [dev-dependencies]
 rand = "0.7"
