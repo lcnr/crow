@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- fix `docs.rs` package metadata.
+
 ## 0.3.1
 
 - add feature `serde1`.
