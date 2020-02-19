@@ -54,21 +54,3 @@ fn main() -> Result<(), crow::Error> {
 }
 
 ```
-
-## Features
-
-- [x] basic pixel perfect rendering
-- [x] image scaling
-- [x] depth
-- [x] color modulation
-  - [x] gray scale
-  - [x] invert colors
-- [x] implement screenshots + getting texture data
-- [x] flip textures
-- [x] subtextures (spritesheets)
-- [ ] flip textures diagonally
-- [x] different drawing modes
-- [x] change draw to accept a generic target (allows for easy cameras/scaling etc etc)
-- [x] debug lines
-- [ ] actual error handling
-- [ ] custom renderer support
