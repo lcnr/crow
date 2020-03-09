@@ -18,7 +18,7 @@ impl Backend {
         draw_config: &DrawConfig,
     ) -> Result<(), ErrDontCare> {
         let s = &mut self.state;
-        s.update_program(self.program.id);
+        s.update_program(self.program.id)?;
         s.update_vao(self.program.vao);
         s.update_blend_mode(draw_config.blend_mode);
         s.update_framebuffer(target_framebuffer);
@@ -58,7 +58,7 @@ impl Backend {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         let s = &mut self.state;
-        s.update_program(self.debug_program.id);
+        s.update_program(self.debug_program.id)?;
         s.update_vao(self.debug_program.vao[rectangle as usize]);
         s.update_framebuffer(target_framebuffer);
         s.update_viewport_dimensions(target_dimensions);

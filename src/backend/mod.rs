@@ -53,7 +53,7 @@ impl Backend {
                 .window()
                 .get_inner_size()
                 .map_or((1024, 720), |s| s.into()),
-        );
+        )?;
 
         Ok(Self {
             state,
