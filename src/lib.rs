@@ -41,6 +41,7 @@
 use std::{
     any, fmt,
     marker::PhantomData,
+    mem,
     path::Path,
     rc::Rc,
     sync::atomic::{AtomicBool, Ordering},
@@ -423,7 +424,13 @@ impl Context {
     /// This method may lead to undefined behavior if a struct, for example a `Texture`, which was created using
     /// the current context, is used with the new context.
     pub unsafe fn unlock_unchecked(self) {
-        // FIXME: Actually reason about the ordering. This should be correct afaik.
+        mem::drop(self);
+
+        let gl_error = gl::GetError();
+        if gl_error != gl::NO_ERROR {
+            bug!("Context::unlock_unchecked: unexpected error: {}", gl_error);
+        }
+
         INITIALIZED.store(false, Ordering::Release);
     }
 }

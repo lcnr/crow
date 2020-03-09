@@ -18,29 +18,43 @@ const FRAGMENT: &str = include_str!("fragment.glsl");
 fn compile_shader(src: &str, ty: GLenum) -> GLuint {
     let shader;
     unsafe {
+        // SAFETY: `ty` is either `gl::VERTEX_SHADER` or `gl::FRAGMENT_SHADER`
         shader = gl::CreateShader(ty);
-        // Attempt to compile the shader
-        let c_str = CString::new(src.as_bytes()).unwrap();
-        gl::ShaderSource(shader, 1, &c_str.as_ptr(), ptr::null());
+
+        // SAFETY:
+        // `shader` is a shader object created by OpenGL
+        // `count` is one
+        gl::ShaderSource(
+            shader,
+            1,
+            &src as *const &str as *const *const _,
+            &(src.len() as GLint),
+        );
+
+        // SAFETY: `shader` is a shader object created by OpenGL
         gl::CompileShader(shader);
 
         // Get the compile status
         let mut status = gl::FALSE as GLint;
+        // SAFETY: `gl::COMPILE_STATUS` is a valid `pname`
         gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut status);
 
         // Fail on error
         if status != (gl::TRUE as GLint) {
             let mut len = 0;
+            // SAFETY: `gl::COMPILE_STATUS` is a valid `pname`
             gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &mut len);
             let mut buf = Vec::with_capacity(len as usize);
-            buf.set_len((len as usize) - 1); // subtract 1 to skip the trailing null character
+            // SAFETY: `maxLength` is the value of `gl::INFO_LOG_LENGTH`
             gl::GetShaderInfoLog(
                 shader,
                 len,
                 ptr::null_mut(),
                 buf.as_mut_ptr() as *mut GLchar,
             );
-            panic!(
+            // SAFETY: the content has been written by `gl::GetShaderInfoLog`
+            buf.set_len((len as usize) - 1);
+            bug!(
                 "{}",
                 str::from_utf8(&buf).expect("ShaderInfoLog not valid utf8")
             );
@@ -55,6 +69,7 @@ fn compile_program(vertex: &str, fragment: &str) -> Result<GLuint, ErrDontCare> 
     let fs = compile_shader(fragment, gl::FRAGMENT_SHADER);
     let program;
     unsafe {
+        // SAFETY: can not fail
         program = gl::CreateProgram();
         assert_ne!(program, 0, "gl::CreateProgram() failed");
         gl::AttachShader(program, vs);
