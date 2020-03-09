@@ -308,7 +308,8 @@ impl OpenGlState {
             unsafe {
                 // SAFETY:
                 // `gl::TEXTURE_2D` is a valid target
-                // `self.texture` is a `gl::TEXTURE_2D` created with `glGenTextures`
+                // `self.texture` was created using `glGenTexture`
+                //      and is only ever bound to `gl::TEXTURE_2D`
                 gl::BindTexture(gl::TEXTURE_2D, self.texture);
             }
         }

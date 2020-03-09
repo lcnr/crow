@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use static_assertions::{assert_type_eq_all, const_assert_eq};
 
 use gl::types::*;
@@ -20,10 +22,34 @@ const_assert_eq!(true as GLboolean, gl::TRUE);
 const_assert_eq!(false as GLboolean, gl::FALSE);
 
 #[derive(Debug)]
+pub struct GlConstants {
+    pub max_texture_size: u32,
+}
+
+impl GlConstants {
+    pub fn load() -> Self {
+        let mut max_texture_size = 0;
+        unsafe {
+            // SAFETY: `gl::MAX_TEXTURE_SIZE` is a valid `pname`
+            gl::GetIntegerv(gl::MAX_TEXTURE_SIZE, &mut max_texture_size);
+        }
+
+        let max_texture_size = if let Ok(s) = u32::try_from(max_texture_size) {
+            s
+        } else {
+            bug!("Unexpected `max_texture_size`: {}", max_texture_size);
+        };
+
+        GlConstants { max_texture_size }
+    }
+}
+
+#[derive(Debug)]
 pub struct Backend {
     state: OpenGlState,
     events_loop: EventsLoop,
     gl_context: ContextWrapper<PossiblyCurrent, Window>,
+    constants: GlConstants,
     program: Program,
     debug_program: DebugProgram,
 }
@@ -61,10 +87,13 @@ impl Backend {
                 .map_or((1024, 720), |s| s.into()),
         )?;
 
+        let constants = GlConstants::load();
+
         Ok(Self {
             state,
             events_loop,
             gl_context,
+            constants,
             program,
             debug_program,
         })
@@ -192,6 +221,10 @@ impl Backend {
         self.gl_context.swap_buffers().unwrap();
         self.state.update_framebuffer(0);
         self.clear_depth(0)
+    }
+
+    pub fn constants(&self) -> &GlConstants {
+        &self.constants
     }
 
     pub fn events_loop(&mut self) -> &mut EventsLoop {

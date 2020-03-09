@@ -251,35 +251,27 @@ impl TestRunner {
 
     fn run(mut self) -> i32 {
         // randomize test order
+        println!("\nrunning {} tests", self.0.len());
         self.0.shuffle(&mut rand::thread_rng());
 
         let mut success = 0;
-        let mut failure = 0;
+        let mut failed = 0;
 
         for (name, f) in self.0 {
             match test(name, f) {
                 Ok(()) => success += 1,
-                Err(()) => failure += 1,
+                Err(()) => failed += 1,
             }
         }
 
-        if failure > 0 {
-            println!(
-                "RUN FAILED: total: {}, success: {}, failure: {}",
-                success + failure,
-                success,
-                failure
-            );
-            1
-        } else {
-            println!(
-                "RUN SUCCESS: total: {}, success: {}, failure: {}",
-                success + failure,
-                success,
-                failure
-            );
-            0
-        }
+        let (v, s) = if failed > 0 { (1, "FAILED") } else { (0, "ok") };
+
+        println!(
+            "test result: {}. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out\n",
+            s, success, failed,
+        );
+
+        v
     }
 }
 

@@ -2,9 +2,12 @@
 
 ## 0.4.0
 
+- update image from version `0.22` to `0.23`.
 - remove `fn Texture::clear_depth`, use `Context::clear_depth(&mut texture)` instead.
 - add required trait method `fn DrawTarget::receive_clear_depth`.
 - add `fn Context::clear_depth`.
+- add `fn Context::maximum_texture_size`
+- update error type of `fn Texture::new`.
 - reduce the requires OpenGL version to **3.2**.
 
 ## 0.3.2

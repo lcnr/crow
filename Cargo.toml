@@ -17,7 +17,8 @@ features = ["serde1"]
 [dependencies]
 gl = "0.14"
 glutin = "0.21"
-image = "0.22"
+image = "0.23"
+
 static_assertions = "1"
 
 [dependencies.serde]

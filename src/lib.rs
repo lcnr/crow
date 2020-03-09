@@ -50,7 +50,7 @@ use static_assertions::assert_not_impl_any;
 
 use glutin::{EventsLoop, Window, WindowBuilder};
 
-use image::RgbaImage;
+use image::{ImageError, RgbaImage};
 
 #[cfg(all(feature = "serde", not(feature = "serde1")))]
 compile_error!("Tried using the feature `serde` directly, consider enabling `serde1` instead");
@@ -77,6 +77,19 @@ pub use glutin;
 pub use image;
 
 use backend::{tex::RawTexture, Backend};
+
+trait UnwrapBug<T> {
+    fn unwrap_bug(self) -> T;
+}
+
+impl<T, E: fmt::Debug> UnwrapBug<T> for Result<T, E> {
+    fn unwrap_bug(self) -> T {
+        match self {
+            Ok(v) => v,
+            Err(e) => bug!("unexpected internal error: {:?}", e),
+        }
+    }
+}
 
 #[derive(Clone, Copy)]
 struct SkipDebug<T>(T);
@@ -267,6 +280,16 @@ impl Context {
         WindowSurface {
             _marker: PhantomData,
         }
+    }
+
+    /// Returns the size of the biggest supported texture.
+    ///
+    /// Trying to create a texture with a size
+    /// greater than `maximum_texture_size` results in an
+    /// `InvalidTextureSize` error.
+    pub fn maximum_texture_size(&self) -> (u32, u32) {
+        let s = self.backend.constants().max_texture_size;
+        (s, s)
     }
 
     /// Draws the `source` onto `target`.
@@ -504,13 +527,13 @@ impl Texture {
     /// Creates a new texture with the given `dimensions`.
     ///
     /// The content of the texture is undefined after its creation.
-    pub fn new(ctx: &mut Context, dimensions: (u32, u32)) -> Result<Self, ErrDontCare> {
+    pub fn new(ctx: &mut Context, dimensions: (u32, u32)) -> Result<Self, NewTextureError> {
         let raw = RawTexture::new(&mut ctx.backend, dimensions)?;
 
         Ok(Self::from_raw(raw))
     }
 
-    pub fn from_image(ctx: &mut Context, image: RgbaImage) -> Result<Self, ErrDontCare> {
+    pub fn from_image(ctx: &mut Context, image: RgbaImage) -> Result<Self, NewTextureError> {
         let raw = RawTexture::from_image(&mut ctx.backend, image)?;
 
         Ok(Self::from_raw(raw))
@@ -518,7 +541,16 @@ impl Texture {
 
     /// Loads a texture from an image located at `path`.
     pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, LoadTextureError> {
-        let raw = RawTexture::load(&mut ctx.backend, path)?;
+        let image = match image::open(path) {
+            Ok(image) => image.to_rgba(),
+            Err(ImageError::IoError(e)) => return Err(LoadTextureError::IoError(e)),
+            Err(todo) => {
+                eprintln!("Texture::load: {:?}", todo);
+                return Err(LoadTextureError::Unspecified);
+            }
+        };
+
+        let raw = RawTexture::from_image(&mut ctx.backend, image)?;
 
         Ok(Self::from_raw(raw))
     }
@@ -568,10 +600,10 @@ impl Texture {
         ctx: &mut Context,
     ) -> Result<&'a mut RawTexture, ErrDontCare> {
         if self.position != (0, 0) || self.size != self.inner.dimensions {
-            let mut inner = RawTexture::new(&mut ctx.backend, self.size)?;
+            let mut inner = RawTexture::new(&mut ctx.backend, self.size).unwrap_bug();
             inner.add_framebuffer(&mut ctx.backend)?;
             ctx.backend.draw(
-                inner.frame_buffer_id,
+                inner.framebuffer_id,
                 self.size,
                 &self.inner,
                 self.position,
@@ -641,7 +673,7 @@ impl DrawTarget for Texture {
         let target = self.prepare_as_draw_target(ctx)?;
 
         ctx.backend.draw(
-            target.frame_buffer_id,
+            target.framebuffer_id,
             target.dimensions,
             &texture.inner,
             texture.position,
@@ -657,12 +689,12 @@ impl DrawTarget for Texture {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         let target = self.prepare_as_draw_target(ctx)?;
-        ctx.backend.clear_color(target.frame_buffer_id, color)
+        ctx.backend.clear_color(target.framebuffer_id, color)
     }
 
     fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
         let target = self.prepare_as_draw_target(ctx)?;
-        ctx.backend.clear_depth(target.frame_buffer_id)
+        ctx.backend.clear_depth(target.framebuffer_id)
     }
 
     fn receive_line(
@@ -676,7 +708,7 @@ impl DrawTarget for Texture {
 
         ctx.backend.debug_draw(
             false,
-            target.frame_buffer_id,
+            target.framebuffer_id,
             target.dimensions,
             from,
             to,
@@ -695,7 +727,7 @@ impl DrawTarget for Texture {
 
         ctx.backend.debug_draw(
             true,
-            target.frame_buffer_id,
+            target.framebuffer_id,
             target.dimensions,
             lower_left,
             upper_right,
