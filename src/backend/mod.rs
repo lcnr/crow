@@ -1,8 +1,3 @@
-use std::{
-    ffi::{self, CStr, CString},
-    ptr, slice,
-};
-
 use gl::types::*;
 use glutin::{ContextWrapper, EventsLoop, PossiblyCurrent, Window, WindowBuilder};
 
@@ -17,64 +12,6 @@ use tex::RawTexture;
 
 use shader::{DebugProgram, Program};
 use state::OpenGlState;
-
-extern "system" fn debug_callback(
-    source: GLenum,
-    ty: GLenum,
-    _id: GLuint,
-    severity: GLenum,
-    length: GLsizei,
-    message: *const GLchar,
-    _: *mut ffi::c_void,
-) {
-    println!("OPEN GL ERROR:");
-    print!("  SOURCE: ");
-    match source {
-        gl::DEBUG_SOURCE_API => println!("DEBUG_SOURCE_API"),
-        gl::DEBUG_SOURCE_WINDOW_SYSTEM => println!("DEBUG_SOURCE_WINDOW_SYSTEM"),
-        gl::DEBUG_SOURCE_SHADER_COMPILER => println!("DEBUG_SOURCE_SHADER_COMPILER"),
-        gl::DEBUG_SOURCE_THIRD_PARTY => println!("DEBUG_SOURCE_THIRD_PARTY"),
-        gl::DEBUG_SOURCE_APPLICATION => println!("DEBUG_SOURCE_APPLICATION"),
-        gl::DEBUG_SOURCE_OTHER => println!("DEBUG_SOURCE_OTHER"),
-        unexpected => println!("UNEXPECTED: {}", unexpected),
-    };
-
-    print!("  TYPE: ");
-    match ty {
-        gl::DEBUG_TYPE_ERROR => println!("DEBUG_TYPE_ERROR"),
-        gl::DEBUG_TYPE_DEPRECATED_BEHAVIOR => println!("DEBUG_TYPE_DEPRECATED_BEHAVIOR"),
-        gl::DEBUG_TYPE_UNDEFINED_BEHAVIOR => println!("DEBUG_TYPE_UNDEFINED_BEHAVIOR"),
-        gl::DEBUG_TYPE_PORTABILITY => println!("DEBUG_TYPE_PORTABILITY"),
-        gl::DEBUG_TYPE_PERFORMANCE => println!("DEBUG_TYPE_PERFORMANCE"),
-        gl::DEBUG_TYPE_MARKER => println!("DEBUG_TYPE_MARKER"),
-        gl::DEBUG_TYPE_PUSH_GROUP => println!("DEBUG_TYPE_PUSH_GROUP"),
-        gl::DEBUG_TYPE_POP_GROUP => println!("DEBUG_TYPE_POP_GROUP"),
-        gl::DEBUG_TYPE_OTHER => println!("DEBUG_TYPE_OTHER"),
-        unexpected => println!("UNEXPECTED: {}", unexpected),
-    };
-
-    print!("  SEVERITY: ");
-    match severity {
-        gl::DEBUG_SEVERITY_LOW => println!("DEBUG_SEVERITY_LOW"),
-        gl::DEBUG_SEVERITY_MEDIUM => println!("DEBUG_SEVERITY_MEDIUM"),
-        gl::DEBUG_SEVERITY_HIGH => println!("DEBUG_SEVERITY_HIGH"),
-        gl::DEBUG_SEVERITY_NOTIFICATION => println!("DEBUG_SEVERITY_NOTIFICATION"),
-        unexpected => println!("UNEXPECTED: {}", unexpected),
-    };
-
-    let s;
-    let msg = unsafe {
-        if length < 0 {
-            CStr::from_ptr(message)
-        } else {
-            let slice: &[u8] = slice::from_raw_parts(message as *const u8, length as usize);
-            s = CString::new(slice).unwrap();
-            &s
-        }
-    };
-
-    println!("  MESSAGE: {}", msg.to_str().unwrap());
-}
 
 #[derive(Debug)]
 pub struct Backend {
@@ -101,11 +38,7 @@ impl Backend {
         gl::load_with(|symbol| gl_context.get_proc_address(symbol) as *const _);
 
         unsafe {
-            gl::Enable(gl::DEBUG_OUTPUT);
-            gl::DebugMessageCallback(Some(debug_callback), ptr::null());
-        }
-
-        unsafe {
+            // SAFETY: `gl::BLEND` is a valid capability
             gl::Enable(gl::BLEND);
         }
 
@@ -146,12 +79,25 @@ impl Backend {
     }
 
     pub fn take_screenshot(&mut self, (width, height): (u32, u32)) -> Vec<u8> {
-        // FIXME: this could theoretically overflow, leading to memory unsafety.
-        let byte_count = 4 * width as usize * height as usize;
+        let byte_count = usize::checked_mul(height as usize, width as usize)
+            .and_then(|p| p.checked_mul(4))
+            .unwrap_or_else(|| {
+                bug!(
+                    "screen byte count does not fit into a usize: {}x{}",
+                    width,
+                    height
+                )
+            });
         let mut data: Vec<u8> = Vec::with_capacity(byte_count);
 
         self.state.update_framebuffer(0);
         unsafe {
+            // SAFETY:
+            // `gl::RGBA` is an accepted format
+            // `gl::UNSIGNED_BYTE` is an accepted type
+            // `width` and `height` are both positive
+            // `GL_PIXEL_PACK_BUFFER` and `GL_READ_FRAMEBUFFER_BINDING`
+            //      are never used and zero by default
             gl::ReadPixels(
                 0,
                 0,
@@ -161,9 +107,7 @@ impl Backend {
                 gl::UNSIGNED_BYTE,
                 data.as_mut_ptr() as *mut _,
             );
-            if gl::GetError() != gl::NO_ERROR {
-                panic!("failed to take a screenshot");
-            }
+            // SAFETY: the buffer has the correct capacity and has been initialized by gl::ReadPixels
             data.set_len(byte_count);
         }
 
@@ -174,12 +118,25 @@ impl Backend {
         let (width, height) = texture.dimensions;
 
         // FIXME: this could theoretically overflow, leading to memory unsafety.
-        let byte_count = 4 * width as usize * height as usize;
+        let byte_count = usize::checked_mul(height as usize, width as usize)
+            .and_then(|p| p.checked_mul(4))
+            .unwrap_or_else(|| {
+                bug!(
+                    "texture byte count does not fit into a usize: {}x{}",
+                    width,
+                    height
+                )
+            });
         let mut data: Vec<u8> = Vec::with_capacity(byte_count);
 
         unsafe {
-            // FIXME: consider using glGetTextureImage even if it is only supported since OpenGL 4.5
             self.state.update_texture(texture.id);
+            // SAFETY:
+            // `gl::TEXTURE_2D` is an accepted target
+            // `gl::RGBA` is an accepted format
+            // `gl::UNSIGNED_BYTE` is an accepted type
+            // `level` is set to 0
+            // `GL_PIXEL_PACK_BUFFER` is never used and zero by default.
             gl::GetTexImage(
                 gl::TEXTURE_2D,
                 0,
@@ -187,18 +144,20 @@ impl Backend {
                 gl::UNSIGNED_BYTE,
                 data.as_mut_ptr() as *mut _,
             );
-            if gl::GetError() != gl::NO_ERROR {
-                panic!("failed to take a screenshot");
-            }
+
+            // SAFETY: the buffer has the correct capacity and has been initialized by gl::GetTexImage
             data.set_len(byte_count);
         }
 
         data
     }
 
-    pub fn clear_texture_depth(&mut self, texture: &mut RawTexture) -> Result<(), ErrDontCare> {
-        self.state.update_framebuffer(texture.frame_buffer_id);
+    pub fn clear_depth(&mut self, framebuffer: GLuint) -> Result<(), ErrDontCare> {
+        self.state.update_framebuffer(framebuffer);
         unsafe {
+            // SAFETY:
+            // no undefined bit is set in `mask`
+            // `glBegin` and `glEnd` are never used
             gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
 
@@ -212,7 +171,11 @@ impl Backend {
     ) -> Result<(), ErrDontCare> {
         self.state.update_framebuffer(buffer_id);
         unsafe {
+            // SAFETY: this function is always safe
             gl::ClearColor(color.0, color.1, color.2, color.3);
+            // SAFETY:
+            // no undefined bit is set in `mask`
+            // `glBegin` and `glEnd` are never used
             gl::Clear(gl::COLOR_BUFFER_BIT);
         }
 
@@ -222,11 +185,7 @@ impl Backend {
     pub fn finalize_frame(&mut self) -> Result<(), ErrDontCare> {
         self.gl_context.swap_buffers().unwrap();
         self.state.update_framebuffer(0);
-        unsafe {
-            gl::Clear(gl::DEPTH_BUFFER_BIT);
-        }
-
-        Ok(())
+        self.clear_depth(0)
     }
 
     pub fn events_loop(&mut self) -> &mut EventsLoop {

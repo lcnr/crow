@@ -58,6 +58,15 @@ compile_error!("Tried using the feature `serde` directly, consider enabling `ser
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+macro_rules! bug {
+    ($msg:expr$(,)?) => ({
+        panic!("{}\n\n This might be a bug, consider filing an issue at https://github.com/lcnr/crow/issues/new", $msg)
+    });
+    ($fmt:expr, $($arg:tt)+) => ({
+        panic!("{}\n\n This might be a bug, consider filing an issue at https://github.com/lcnr/crow/issues/new", format_args!($fmt, $($arg)+))
+    });
+}
+
 mod backend;
 pub mod color;
 mod error;
@@ -99,6 +108,9 @@ pub trait DrawTarget {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare>;
 
+    /// Resets the depth buffer of `self` to `1.0`.
+    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare>;
+
     /// Draws a line from `from` to `to`.
     fn receive_line(
         &mut self,
@@ -138,6 +150,10 @@ impl<T: DrawTarget> DrawTarget for &mut T {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         <T>::receive_clear_color(self, ctx, color)
+    }
+
+    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+        <T>::receive_clear_depth(self, ctx)
     }
 
     fn receive_line(
@@ -310,7 +326,7 @@ impl Context {
         target.receive_rectangle(self, lower_left, upper_right, color)
     }
 
-    /// Clears the given [`DrawTarget`], setting each pixel to `color`
+    /// Clears the color of the given [`DrawTarget`], setting each pixel to `color`
     ///
     /// [`DrawTarget`]: trait.DrawTarget.html
     pub fn clear_color<T>(
@@ -322,6 +338,16 @@ impl Context {
         T: DrawTarget,
     {
         target.receive_clear_color(self, color)
+    }
+
+    /// Resets the depth buffer of the given [`DrawTarget`] to `1.0`.
+    ///
+    /// [`DrawTarget`]: trait.DrawTarget.html
+    pub fn clear_depth<T>(&mut self, target: &mut T) -> Result<(), ErrDontCare>
+    where
+        T: DrawTarget,
+    {
+        target.receive_clear_depth(self)
     }
 
     /// Stores the current state of the window in an image.
@@ -419,6 +445,10 @@ impl DrawTarget for WindowSurface {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         ctx.backend.clear_color(0, color)
+    }
+
+    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+        ctx.backend.clear_depth(0)
     }
 
     fn receive_line(
@@ -589,12 +619,6 @@ impl Texture {
 
         RgbaImage::from_vec(self.size.0, self.size.1, image_data).unwrap()
     }
-
-    /// Resets the depth buffer to `1.0` for every pixel.
-    pub fn clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
-        let target = self.prepare_as_draw_target(ctx)?;
-        ctx.backend.clear_texture_depth(target)
-    }
 }
 
 impl DrawTarget for Texture {
@@ -634,6 +658,11 @@ impl DrawTarget for Texture {
     ) -> Result<(), ErrDontCare> {
         let target = self.prepare_as_draw_target(ctx)?;
         ctx.backend.clear_color(target.frame_buffer_id, color)
+    }
+
+    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+        let target = self.prepare_as_draw_target(ctx)?;
+        ctx.backend.clear_depth(target.frame_buffer_id)
     }
 
     fn receive_line(

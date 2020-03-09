@@ -37,6 +37,11 @@ impl Backend {
         s.update_flip_vertically(draw_config.flip_vertically);
         s.update_flip_horizontally(draw_config.flip_horizontally);
         unsafe {
+            // SAFETY:
+            // `gl::TRIANGLE_STRIP` is an accepted value
+            // `count` is positive
+            // We never map the data store of a buffer object
+            // No geometry shader is active
             gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
         }
 
@@ -67,6 +72,11 @@ impl Backend {
         );
         s.update_debug_start_end(data);
         unsafe {
+            // SAFETY:
+            // `gl::LINE_STRIP` is an accepted value
+            // `count` is positive
+            // We never map the data store of a buffer object
+            // No geometry shader is active
             gl::DrawArrays(gl::LINE_STRIP, 0, if rectangle { 5 } else { 2 });
         }
 

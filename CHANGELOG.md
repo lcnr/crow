@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- remove `fn Texture::clear_depth`, use `Context::clear_depth(&mut texture)` instead.
+- add required trait method `fn DrawTarget::receive_clear_depth`.
+- add `fn Context::clear_depth`.
+- reduce the requires OpenGL version to **3.2**.
+
 ## 0.3.2
 
 - fix `docs.rs` package metadata.

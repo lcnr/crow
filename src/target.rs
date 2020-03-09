@@ -48,6 +48,10 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
         self.inner.receive_clear_color(ctx, color)
     }
 
+    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+        self.inner.receive_clear_depth(ctx)
+    }
+
     fn receive_line(
         &mut self,
         ctx: &mut Context,
@@ -123,6 +127,10 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
         color: (f32, f32, f32, f32),
     ) -> Result<(), ErrDontCare> {
         self.inner.receive_clear_color(ctx, color)
+    }
+
+    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+        self.inner.receive_clear_depth(ctx)
     }
 
     fn receive_line(
