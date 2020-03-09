@@ -1,3 +1,5 @@
+use static_assertions::{assert_type_eq_all, const_assert_eq};
+
 use gl::types::*;
 use glutin::{ContextWrapper, EventsLoop, PossiblyCurrent, Window, WindowBuilder};
 
@@ -12,6 +14,10 @@ use tex::RawTexture;
 
 use shader::{DebugProgram, Program};
 use state::OpenGlState;
+
+assert_type_eq_all!(GLfloat, f32);
+const_assert_eq!(true as GLboolean, gl::TRUE);
+const_assert_eq!(false as GLboolean, gl::FALSE);
 
 #[derive(Debug)]
 pub struct Backend {

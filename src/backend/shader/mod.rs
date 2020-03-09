@@ -293,9 +293,9 @@ impl DebugProgram {
 
         let name_str = "line_color";
         let name = CString::new(name_str).unwrap();
-        let color_uniform = unsafe { gl::GetUniformLocation(program, name.as_ptr()) };
+        let line_color_uniform = unsafe { gl::GetUniformLocation(program, name.as_ptr()) };
 
-        if color_uniform == -1 {
+        if line_color_uniform == -1 {
             panic!("unknown uniform: {}", name_str)
         }
 
@@ -314,7 +314,7 @@ impl DebugProgram {
                 vbo,
             },
             DebugUniforms {
-                color: color_uniform,
+                line_color: line_color_uniform,
                 start_end,
             },
         ))
@@ -333,6 +333,6 @@ impl Drop for DebugProgram {
 
 #[derive(Debug)]
 pub struct DebugUniforms {
-    pub color: GLint,
+    pub line_color: GLint,
     pub start_end: GLint,
 }

@@ -83,7 +83,7 @@ impl OpenGlState {
             gl::BindVertexArray(vao);
 
             let target_dimensions = window_dimensions;
-            // SAFETY: `uniforms.target_dimensions` is declared as a `vec2`
+            // SAFETY: `target_dimensions` is declared as a `vec2`
             gl::Uniform2f(
                 uniforms.target_dimensions,
                 target_dimensions.0 as f32,
@@ -102,7 +102,7 @@ impl OpenGlState {
 
             // SAFETY: `gl::DEPTH_TEST` is a valid `cap`.
             gl::Disable(gl::DEPTH_TEST);
-            // SAFETY: `uniforms.depth` is declared as a `float`
+            // SAFETY: `depth` is declared as a `float`
             gl::Uniform1f(uniforms.depth, depth);
 
             let framebuffer = 0;
@@ -119,9 +119,13 @@ impl OpenGlState {
             assert_eq!(gl::NO_ERROR, gl::GetError());
 
             let source_scale = (1, 1);
+            // SAFETY: `source_scale` is declared as a `uvec2`
             gl::Uniform2ui(uniforms.source_scale, source_scale.0, source_scale.1);
 
             let color_modulation = color::IDENTITY;
+            // SAFETY:
+            // `color_modulation` is declared as a `mat4`
+            // `color::IDENTITY` is an array of 16 `GLfloat`.
             gl::UniformMatrix4fv(
                 uniforms.color_modulation,
                 1,
@@ -130,6 +134,7 @@ impl OpenGlState {
             );
 
             let source_texture_dimensions = (128, 128);
+            // SAFETY: `source_texture_dimensions` is declared as a `vec2`
             gl::Uniform2f(
                 uniforms.source_texture_dimensions,
                 source_texture_dimensions.0 as f32,
@@ -137,6 +142,7 @@ impl OpenGlState {
             );
 
             let source_texture_offset = (0, 0);
+            // SAFETY: `source_texture_offset` is declared as a `uvec2`
             gl::Uniform2ui(
                 uniforms.source_texture_offset,
                 source_texture_offset.0,
@@ -144,6 +150,7 @@ impl OpenGlState {
             );
 
             let source_position = (0, 0);
+            // SAFETY: `source_position` is declared as a `vec2`
             gl::Uniform2f(
                 uniforms.source_position,
                 source_position.0 as f32,
@@ -151,6 +158,7 @@ impl OpenGlState {
             );
 
             let source_dimensions = (128, 128);
+            // SAFETY: `source_dimensions` is declared as a `uvec2`
             gl::Uniform2ui(
                 uniforms.source_dimensions,
                 source_dimensions.0,
@@ -158,12 +166,15 @@ impl OpenGlState {
             );
 
             let invert_color = false;
+            // SAFETY: `invert_color` is declared as a `bool`
             gl::Uniform1ui(uniforms.invert_color, invert_color as _);
 
             let flip_vertically = false;
+            // SAFETY: `flip_vertically` is declared as a `bool`
             gl::Uniform1ui(uniforms.flip_vertically, flip_vertically as _);
 
             let flip_horizontally = false;
+            // SAFETY: `flip_horizontally` is declared as a `bool`
             gl::Uniform1ui(uniforms.flip_horizontally, flip_horizontally as _);
 
             Ok(Self {
@@ -187,8 +198,9 @@ impl OpenGlState {
                 invert_color,
                 flip_vertically,
                 flip_horizontally,
-                debug_color: (0.0, 0.0, 0.0, 0.0),
-                debug_start_end: (std::f32::MIN, std::f32::MIN, std::f32::MIN, std::f32::MIN),
+                // set `debug_color` and `debug_start_end` to fairly random values
+                debug_color: (1.253_434_2e14, 934_551e32, 131_234e-14, 8.937_603e-32),
+                debug_start_end: (1.253_434_2e14, 131_234e-14, 934_551e32, 8.937_603e-32),
             })
         }
     }
@@ -269,7 +281,7 @@ impl OpenGlState {
 
                 if depth != self.depth {
                     self.depth = depth;
-                    // SAFETY: `uniforms.depth` is declared as a `float`
+                    // SAFETY: `depth` is declared as a `float`
                     gl::Uniform1f(self.uniforms.depth, self.depth);
                 }
             }
@@ -306,6 +318,7 @@ impl OpenGlState {
         if source_scale != self.source_scale {
             self.source_scale = source_scale;
             unsafe {
+                // SAFETY: `source_scale` is declared as a `uvec2`
                 gl::Uniform2ui(
                     self.uniforms.source_scale,
                     self.source_scale.0,
@@ -319,6 +332,9 @@ impl OpenGlState {
         if color_modulation != self.color_modulation {
             self.color_modulation = color_modulation;
             unsafe {
+                // SAFETY:
+                // `color_modulation` is declared as a `mat4`
+                // `self.color_modulation` is an array of 16 `GLfloat`.
                 gl::UniformMatrix4fv(
                     self.uniforms.color_modulation,
                     1,
@@ -333,6 +349,7 @@ impl OpenGlState {
         if source_texture_dimensions != self.source_texture_dimensions {
             self.source_texture_dimensions = source_texture_dimensions;
             unsafe {
+                // SAFETY: `source_texture_dimensions` is declared as a `vec2`
                 gl::Uniform2f(
                     self.uniforms.source_texture_dimensions,
                     self.source_texture_dimensions.0 as f32,
@@ -346,6 +363,7 @@ impl OpenGlState {
         if source_texture_offset != self.source_texture_offset {
             self.source_texture_offset = source_texture_offset;
             unsafe {
+                // SAFETY: `source_texture_offset` is declared as a `uvec2`
                 gl::Uniform2ui(
                     self.uniforms.source_texture_offset,
                     self.source_texture_offset.0,
@@ -359,6 +377,7 @@ impl OpenGlState {
         if source_position != self.source_position {
             self.source_position = source_position;
             unsafe {
+                // SAFETY: `source_position` is declared as a `vec2`
                 gl::Uniform2f(
                     self.uniforms.source_position,
                     self.source_position.0 as f32,
@@ -372,6 +391,7 @@ impl OpenGlState {
         if source_dimensions != self.source_dimensions {
             self.source_dimensions = source_dimensions;
             unsafe {
+                // SAFETY: `source_dimensions` is declared as a `uvec2`
                 gl::Uniform2ui(
                     self.uniforms.source_dimensions,
                     self.source_dimensions.0,
@@ -385,6 +405,7 @@ impl OpenGlState {
         if invert_color != self.invert_color {
             self.invert_color = invert_color;
             unsafe {
+                // SAFETY: `invert_color` is declared as a `bool`
                 gl::Uniform1ui(self.uniforms.invert_color, self.invert_color as _);
             }
         }
@@ -394,6 +415,7 @@ impl OpenGlState {
         if flip_vertically != self.flip_vertically {
             self.flip_vertically = flip_vertically;
             unsafe {
+                // SAFETY: `flip_vertically` is declared as a `bool`
                 gl::Uniform1ui(self.uniforms.flip_vertically, self.flip_vertically as _);
             }
         }
@@ -403,6 +425,7 @@ impl OpenGlState {
         if flip_horizontally != self.flip_horizontally {
             self.flip_horizontally = flip_horizontally;
             unsafe {
+                // SAFETY: `flip_horizontally` is declared as a `bool`
                 gl::Uniform1ui(self.uniforms.flip_horizontally, self.flip_horizontally as _);
             }
         }
@@ -411,15 +434,16 @@ impl OpenGlState {
     pub fn update_debug_color(&mut self, debug_color: (f32, f32, f32, f32)) {
         if debug_color != self.debug_color {
             self.debug_color = debug_color;
-        }
-        unsafe {
-            gl::Uniform4f(
-                self.debug_uniforms.color,
-                debug_color.0,
-                debug_color.1,
-                debug_color.2,
-                debug_color.3,
-            );
+            unsafe {
+                // SAFETY: `line_color` is declared as `vec4`
+                gl::Uniform4f(
+                    self.debug_uniforms.line_color,
+                    debug_color.0,
+                    debug_color.1,
+                    debug_color.2,
+                    debug_color.3,
+                );
+            }
         }
     }
     pub fn update_debug_start_end(&mut self, debug_start_end: (f32, f32, f32, f32)) {
@@ -427,6 +451,7 @@ impl OpenGlState {
             self.debug_start_end = debug_start_end;
         }
         unsafe {
+            // SAFETY: `start_end` is declared as `vec4`
             gl::Uniform4f(
                 self.debug_uniforms.start_end,
                 debug_start_end.0,

@@ -16,8 +16,7 @@ should allow users to do nearly everything they want without requiring custom re
 
 The most recent documentation can be found [here](https://docs.rs/crow/0.3.0/crow/).
 
-This crate requires a GPU supporting OpenGL Version **4.3**, I am currently
-trying to lower this to **3.2**.
+This crate requires a GPU supporting OpenGL Version **3.3**.
 
 ## Examples
 
