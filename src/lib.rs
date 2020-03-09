@@ -60,10 +60,10 @@ use serde::{Deserialize, Serialize};
 
 macro_rules! bug {
     ($msg:expr$(,)?) => ({
-        panic!("{}\n\n This might be a bug, consider filing an issue at https://github.com/lcnr/crow/issues/new", $msg)
+        panic!("{}\n\n    This might be a bug, consider filing an issue at https://github.com/lcnr/crow/issues/new", $msg)
     });
     ($fmt:expr, $($arg:tt)+) => ({
-        panic!("{}\n\n This might be a bug, consider filing an issue at https://github.com/lcnr/crow/issues/new", format_args!($fmt, $($arg)+))
+        panic!("{}\n\n    This might be a bug, consider filing an issue at https://github.com/lcnr/crow/issues/new", format_args!($fmt, $($arg)+))
     });
 }
 
@@ -288,8 +288,7 @@ impl Context {
     /// greater than `maximum_texture_size` results in an
     /// `InvalidTextureSize` error.
     pub fn maximum_texture_size(&self) -> (u32, u32) {
-        let s = self.backend.constants().max_texture_size;
-        (s, s)
+        self.backend.constants().max_texture_size
     }
 
     /// Draws the `source` onto `target`.
@@ -601,7 +600,7 @@ impl Texture {
     ) -> Result<&'a mut RawTexture, ErrDontCare> {
         if self.position != (0, 0) || self.size != self.inner.dimensions {
             let mut inner = RawTexture::new(&mut ctx.backend, self.size).unwrap_bug();
-            inner.add_framebuffer(&mut ctx.backend)?;
+            inner.add_framebuffer(&mut ctx.backend);
             ctx.backend.draw(
                 inner.framebuffer_id,
                 self.size,
@@ -614,8 +613,8 @@ impl Texture {
 
             self.inner = Rc::new(inner);
         } else if let Some(inner) = Rc::get_mut(&mut self.inner) {
-            if !inner.is_framebuffer {
-                inner.add_framebuffer(&mut ctx.backend)?;
+            if !inner.has_framebuffer {
+                inner.add_framebuffer(&mut ctx.backend);
             }
         } else {
             self.inner = Rc::new(RawTexture::clone_as_target(&self.inner, &mut ctx.backend)?);

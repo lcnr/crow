@@ -29,7 +29,7 @@ pub struct ErrDontCare;
 pub enum Error {
     IoError(io::Error),
     /// Tried to create a texture with dimensions which are
-    /// greater than the maximum allowed texture size.
+    /// greater than the maximum allowed texture size or zero.
     InvalidTextureSize {
         width: u32,
         height: u32,

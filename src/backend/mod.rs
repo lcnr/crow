@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::{cmp, convert::TryFrom};
 
 use static_assertions::{assert_type_eq_all, const_assert_eq};
 
@@ -23,24 +23,38 @@ const_assert_eq!(false as GLboolean, gl::FALSE);
 
 #[derive(Debug)]
 pub struct GlConstants {
-    pub max_texture_size: u32,
+    pub max_texture_size: (u32, u32),
 }
 
 impl GlConstants {
     pub fn load() -> Self {
-        let mut max_texture_size = 0;
-        unsafe {
-            // SAFETY: `gl::MAX_TEXTURE_SIZE` is a valid `pname`
-            gl::GetIntegerv(gl::MAX_TEXTURE_SIZE, &mut max_texture_size);
+        fn get(pname: GLenum, name: &str) -> u32 {
+            let mut v = 0;
+            unsafe {
+                // SAFETY: `pname` is valid
+                gl::GetIntegerv(pname, &mut v);
+            }
+
+            if let Ok(v) = u32::try_from(v) {
+                v
+            } else {
+                bug!("Unexpected `{}`: {}", name, v)
+            }
         }
 
-        let max_texture_size = if let Ok(s) = u32::try_from(max_texture_size) {
-            s
-        } else {
-            bug!("Unexpected `max_texture_size`: {}", max_texture_size);
-        };
+        let texture_size = get(gl::MAX_TEXTURE_SIZE, "max_texture_size");
+        let renderbuffer_size = get(gl::MAX_RENDERBUFFER_SIZE, "max_renderbuffer_size");
 
-        GlConstants { max_texture_size }
+        let size = cmp::min(texture_size, renderbuffer_size);
+        let framebuffer_width = get(gl::MAX_FRAMEBUFFER_WIDTH, "max_framebuffer_width");
+        let framebuffer_height = get(gl::MAX_FRAMEBUFFER_HEIGHT, "max_framebuffer_height");
+
+        GlConstants {
+            max_texture_size: (
+                cmp::min(size, framebuffer_width),
+                cmp::min(size, framebuffer_height),
+            ),
+        }
     }
 }
 

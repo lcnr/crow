@@ -12,13 +12,13 @@ pub struct RawTexture {
     pub framebuffer_id: GLuint,
     pub depth_id: GLuint,
     pub dimensions: (u32, u32),
-    pub is_framebuffer: bool,
+    pub has_framebuffer: bool,
 }
 
 impl Drop for RawTexture {
     fn drop(&mut self) {
         // SAFETY: `n` is `1` for all functions
-        if self.is_framebuffer {
+        if self.has_framebuffer {
             unsafe { gl::DeleteFramebuffers(1, &self.framebuffer_id as *const _) }
             unsafe { gl::DeleteRenderbuffers(1, &self.depth_id as *const _) }
         }
@@ -32,8 +32,10 @@ impl RawTexture {
         dimensions: (u32, u32),
         data: *const c_void,
     ) -> Result<RawTexture, NewTextureError> {
-        let max_size = backend.constants().max_texture_size;
-        if dimensions.0 > max_size || dimensions.1 > max_size {
+        let (max_width, max_height) = backend.constants().max_texture_size;
+        if (dimensions.0 == 0 || dimensions.1 == 0)
+            || (dimensions.0 > max_width || dimensions.1 > max_height)
+        {
             return Err(NewTextureError::InvalidTextureSize {
                 width: dimensions.0,
                 height: dimensions.1,
@@ -83,7 +85,7 @@ impl RawTexture {
             framebuffer_id: 0,
             depth_id: 0,
             dimensions,
-            is_framebuffer: false,
+            has_framebuffer: false,
         })
     }
 
@@ -112,53 +114,114 @@ impl RawTexture {
         Self::internal_new(backend, dimensions, reversed_data.as_ptr() as *const _)
     }
 
-    pub fn add_framebuffer(&mut self, backend: &mut Backend) -> Result<(), ErrDontCare> {
-        assert!(!self.is_framebuffer);
-        self.is_framebuffer = true;
+    pub fn add_framebuffer(&mut self, backend: &mut Backend) {
+        assert!(!self.has_framebuffer);
         let mut buffer = 0;
-
-        unsafe {
-            gl::GenFramebuffers(1, &mut buffer as *mut _);
-        }
-        backend.state.update_framebuffer(buffer);
-
         let mut depth = 0;
+
         unsafe {
+            // SAFETY: `n` is 1
+            gl::GenFramebuffers(1, &mut buffer as *mut _);
+
+            backend.state.update_framebuffer(buffer);
+
+            // SAFETY:
+            // `gl::FRAMEBUFFER` is a valid `target`
+            // We just bound `buffer` to `target` meaning that buffer is not zero
+            // `gl::COLOR_ATTACHMENT0` is a valid `attachment`
+            // `self.id` is a valid `texture` which supports the `level` zero.
+            // `self.id` is a `gl::TEXTURE_2D`
             gl::FramebufferTexture(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, self.id, 0);
 
+            // SAFETY: `n` is 1
             gl::GenRenderbuffers(1, &mut depth as *mut _);
+
+            // SAFETY:
+            // `target` is `gl::RENDERBUFFER`
+            // `depth` was returned from `gl::GenRenderbuffers`
             gl::BindRenderbuffer(gl::RENDERBUFFER, depth);
+
+            // SAFETY:
+            // `target` is `gl::RENDERBUFFER`
+            // `width` and `height` in the range `0..=gl::MAX_RENDERBUFFER_SIZE`
+            // `gl::DEPTH_COMPONENT16` is a depth-renderable format
             gl::RenderbufferStorage(
                 gl::RENDERBUFFER,
-                gl::DEPTH_COMPONENT,
+                gl::DEPTH_COMPONENT16,
                 self.dimensions.0 as _,
                 self.dimensions.1 as _,
             );
+            // check if GL is out of memory
+            let gl_error = gl::GetError();
+            match gl_error {
+                gl::NO_ERROR => (),
+                gl::OUT_OF_MEMORY => {
+                    let other_error = gl::GetError();
+                    if other_error != gl::NO_ERROR {
+                        bug!(
+                            "gl::RenderbufferStorage: unexpected second error: {}",
+                            other_error
+                        );
+                    }
+
+                    // TODO: OpenGl is now in an undefined state,
+                    // consider aborting instead, as it is possible
+                    // to catch a panic
+                    panic!("OpenGl is out of memory and in an invalid state");
+                }
+                e => bug!("gl::RenderbufferStorage: unexpected error: {}", e),
+            }
+
+            // SAFETY:
+            // `gl::FRAMEBUFFER` is a valid `target`
+            // We just bound `buffer` to `target` meaning that buffer is not zero
+            // `gl::DEPTH_ATTACHMENT` is a valid `attachment`
+            // the `renderbuffertarget` is `gl::RENDERBUFFER`
+            // `depth` has type `gl::RENDERBUFFER` and was returned from `gl::GenRenderbuffers`
             gl::FramebufferRenderbuffer(
                 gl::FRAMEBUFFER,
                 gl::DEPTH_ATTACHMENT,
                 gl::RENDERBUFFER,
                 depth,
             );
+
+            // SAFETY:
+            // `gl::COLOR_ATTACHMENT0` is an accepted value
+            // the current framebuffer is not the default
+            // `n` is one
+            // `gl::COLOR_ATTACHMENT0` has been added to the current framebuffer
             gl::DrawBuffers(1, &gl::COLOR_ATTACHMENT0 as *const _);
 
-            assert_eq!(
-                gl::CheckFramebufferStatus(gl::FRAMEBUFFER),
-                gl::FRAMEBUFFER_COMPLETE
-            );
+            // ATTACHMENT COMPLETENESS:
+            // the source object still exists and did not change its type
+            // image size is not zero or greater than GL_MAX_FRAMEBUFFER_(WIDTH|HEIGHT)
+            // no samples are attached
+            // FRAMEBUFFER COMPLETENESS:
+            // all attachments are ATTACHMENT COMPLETE
+            // exactly one image is attached
+            // the draw buffer has an image attached
 
+            // SAFETY:
+            // `gl::FRAMEBUFFER` is a valid `target`
+            if gl::CheckFramebufferStatus(gl::FRAMEBUFFER) != gl::FRAMEBUFFER_COMPLETE {
+                bug!("incomplete framebuffer");
+            }
+
+            // SAFETY:
+            // no undefined bit is set in `mask`
+            // `glBegin` and `glEnd` are never used
             gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
 
         self.depth_id = depth;
         self.framebuffer_id = buffer;
 
-        Ok(())
+        self.has_framebuffer = true;
     }
 
     pub fn clone_as_target(previous: &Self, backend: &mut Backend) -> Result<Self, ErrDontCare> {
         let mut clone = Self::new(backend, previous.dimensions).unwrap_bug();
-        clone.add_framebuffer(backend)?;
+        clone.add_framebuffer(backend);
         backend.clear_color(clone.framebuffer_id, (0.0, 0.0, 0.0, 0.0))?;
         backend.draw(
             clone.framebuffer_id,
