@@ -16,6 +16,8 @@ should allow users to do nearly everything they want without requiring custom re
 
 The most recent documentation can be found [here](https://docs.rs/crow/0.3.0/crow/).
 
+You may also want to consider looking at [akari](https://github.com/lcnr/akari), a WIP showcase project.
+
 This crate requires a GPU supporting OpenGL Version **3.3**.
 
 ## Examples
