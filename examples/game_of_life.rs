@@ -30,7 +30,7 @@ fn main() -> Result<(), crow::Error> {
     )?;
 
     let mut texture = Texture::new(&mut ctx, (1, 1))?;
-    ctx.clear_color(&mut texture, (1.0, 1.0, 1.0, 1.0))?;
+    ctx.clear_color(&mut texture, (1.0, 1.0, 1.0, 1.0));
     let mut surface = Scaled::new(ctx.window_surface(), (CELL_SIZE, CELL_SIZE));
 
     let mut fin = false;
@@ -73,7 +73,7 @@ fn main() -> Result<(), crow::Error> {
             }
         });
 
-        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0))?;
+        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
 
         for (x, row) in cells.iter().enumerate() {
             for (y, &cell) in row.iter().enumerate() {
@@ -91,12 +91,12 @@ fn main() -> Result<(), crow::Error> {
                             color_modulation,
                             ..Default::default()
                         },
-                    )?;
+                    );
                 }
             }
         }
 
-        ctx.finalize_frame()?;
+        ctx.finalize_frame();
 
         if fin {
             break;

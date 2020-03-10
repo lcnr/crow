@@ -24,10 +24,10 @@
 //!             _ => (),
 //!         });
 //!
-//!         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0))?;
-//!         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default())?;
+//!         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
+//!         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default());
 //!
-//!         ctx.finalize_frame()?;
+//!         ctx.finalize_frame();
 //!
 //!         if fin {
 //!             break;
@@ -51,7 +51,7 @@ use static_assertions::assert_not_impl_any;
 
 use glutin::{EventsLoop, Window, WindowBuilder};
 
-use image::{ImageError, RgbaImage};
+use image::RgbaImage;
 
 #[cfg(all(feature = "serde", not(feature = "serde1")))]
 compile_error!("Tried using the feature `serde` directly, consider enabling `serde1` instead");
@@ -113,17 +113,13 @@ pub trait DrawTarget {
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
-    ) -> Result<(), ErrDontCare>;
+    );
 
     /// Sets each pixel of `self` to `color`.
-    fn receive_clear_color(
-        &mut self,
-        ctx: &mut Context,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare>;
+    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32));
 
     /// Resets the depth buffer of `self` to `1.0`.
-    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare>;
+    fn receive_clear_depth(&mut self, ctx: &mut Context);
 
     /// Draws a line from `from` to `to`.
     fn receive_line(
@@ -132,7 +128,7 @@ pub trait DrawTarget {
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare>;
+    );
 
     /// Draws the bounding box of an axis-aligned rectangle specified by
     /// its `lower_left` and `upper_right` corner.
@@ -144,7 +140,7 @@ pub trait DrawTarget {
         lower_left: (i32, i32),
         upper_right: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare>;
+    );
 }
 
 impl<T: DrawTarget> DrawTarget for &mut T {
@@ -154,19 +150,15 @@ impl<T: DrawTarget> DrawTarget for &mut T {
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
+    ) {
         <T>::receive_draw(self, ctx, texture, position, config)
     }
 
-    fn receive_clear_color(
-        &mut self,
-        ctx: &mut Context,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32)) {
         <T>::receive_clear_color(self, ctx, color)
     }
 
-    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+    fn receive_clear_depth(&mut self, ctx: &mut Context) {
         <T>::receive_clear_depth(self, ctx)
     }
 
@@ -176,7 +168,7 @@ impl<T: DrawTarget> DrawTarget for &mut T {
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         <T>::receive_line(self, ctx, from, to, color)
     }
 
@@ -186,7 +178,7 @@ impl<T: DrawTarget> DrawTarget for &mut T {
         lower_left: (i32, i32),
         upper_right: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         <T>::receive_rectangle(self, ctx, lower_left, upper_right, color)
     }
 }
@@ -207,7 +199,7 @@ static INITIALIZED: AtomicBool = AtomicBool::new(false);
 /// fn main() -> Result<(), crow::Error> {
 ///     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
 ///
-///     let texture = Texture::load(&mut ctx, "path/to/texture.png").expect("Unable to load texture");
+///     let texture = Texture::load(&mut ctx, "path/to/texture.png")?;
 ///     let mut surface = ctx.window_surface();
 ///
 ///     let mut fin = false;
@@ -220,10 +212,10 @@ static INITIALIZED: AtomicBool = AtomicBool::new(false);
 ///             _ => (),
 ///         });
 ///
-///         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0))?;
-///         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default())?;
+///         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
+///         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default());
 ///
-///         ctx.finalize_frame()?;
+///         ctx.finalize_frame();
 ///
 ///         if fin {
 ///             break;
@@ -248,7 +240,7 @@ impl Context {
     /// The previous context has to be dropped using the method
     /// `Context::unlock_unchecked()`. This is a workaround and
     /// will probably be fixed in a future release.
-    pub fn new(window: WindowBuilder, events_loop: EventsLoop) -> Result<Self, ErrDontCare> {
+    pub fn new(window: WindowBuilder, events_loop: EventsLoop) -> Result<Self, NewContextError> {
         if INITIALIZED.compare_and_swap(false, true, Ordering::AcqRel) {
             panic!("Tried to initialize a second Context");
         }
@@ -303,8 +295,7 @@ impl Context {
         source: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
-    ) -> Result<(), ErrDontCare>
-    where
+    ) where
         T: DrawTarget,
     {
         target.receive_draw(self, source, position, config)
@@ -321,8 +312,7 @@ impl Context {
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare>
-    where
+    ) where
         T: DrawTarget,
     {
         target.receive_line(self, from, to, color)
@@ -342,8 +332,7 @@ impl Context {
         lower_left: (i32, i32),
         upper_right: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare>
-    where
+    ) where
         T: DrawTarget,
     {
         target.receive_rectangle(self, lower_left, upper_right, color)
@@ -352,11 +341,7 @@ impl Context {
     /// Clears the color of the given [`DrawTarget`], setting each pixel to `color`
     ///
     /// [`DrawTarget`]: trait.DrawTarget.html
-    pub fn clear_color<T>(
-        &mut self,
-        target: &mut T,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare>
+    pub fn clear_color<T>(&mut self, target: &mut T, color: (f32, f32, f32, f32))
     where
         T: DrawTarget,
     {
@@ -366,7 +351,7 @@ impl Context {
     /// Resets the depth buffer of the given [`DrawTarget`] to `1.0`.
     ///
     /// [`DrawTarget`]: trait.DrawTarget.html
-    pub fn clear_depth<T>(&mut self, target: &mut T) -> Result<(), ErrDontCare>
+    pub fn clear_depth<T>(&mut self, target: &mut T)
     where
         T: DrawTarget,
     {
@@ -413,7 +398,7 @@ impl Context {
     }
 
     /// Presents the current frame to the screen and prepares for the next frame.
-    pub fn finalize_frame(&mut self) -> Result<(), ErrDontCare> {
+    pub fn finalize_frame(&mut self) {
         self.backend.finalize_frame()
     }
 
@@ -455,7 +440,7 @@ impl DrawTarget for WindowSurface {
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
+    ) {
         let dim = ctx.backend.window_dimensions();
         ctx.backend.draw(
             0,
@@ -468,15 +453,11 @@ impl DrawTarget for WindowSurface {
         )
     }
 
-    fn receive_clear_color(
-        &mut self,
-        ctx: &mut Context,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32)) {
         ctx.backend.clear_color(0, color)
     }
 
-    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+    fn receive_clear_depth(&mut self, ctx: &mut Context) {
         ctx.backend.clear_depth(0)
     }
 
@@ -486,7 +467,7 @@ impl DrawTarget for WindowSurface {
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         let dim = ctx.backend.window_dimensions();
         ctx.backend.debug_draw(false, 0, dim, from, to, color)
     }
@@ -497,7 +478,7 @@ impl DrawTarget for WindowSurface {
         lower_left: (i32, i32),
         upper_right: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         let dim = ctx.backend.window_dimensions();
         ctx.backend
             .debug_draw(true, 0, dim, lower_left, upper_right, color)
@@ -547,16 +528,9 @@ impl Texture {
 
     /// Loads a texture from an image located at `path`.
     pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, LoadTextureError> {
-        let image = match image::open(path) {
-            Ok(image) => image.to_rgba(),
-            Err(ImageError::IoError(e)) => return Err(LoadTextureError::IoError(e)),
-            Err(todo) => {
-                eprintln!("Texture::load: {:?}", todo);
-                return Err(LoadTextureError::Unspecified);
-            }
-        };
+        let image = image::open(path).map_err(LoadTextureError::ImageError)?;
 
-        let raw = RawTexture::from_image(&mut ctx.backend, image)?;
+        let raw = RawTexture::from_image(&mut ctx.backend, image.to_rgba())?;
 
         Ok(Self::from_raw(raw))
     }
@@ -601,10 +575,7 @@ impl Texture {
         self.size.1
     }
 
-    fn prepare_as_draw_target<'a>(
-        &'a mut self,
-        ctx: &mut Context,
-    ) -> Result<&'a mut RawTexture, ErrDontCare> {
+    fn prepare_as_draw_target<'a>(&'a mut self, ctx: &mut Context) -> &'a mut RawTexture {
         if self.position != (0, 0) || self.size != self.inner.dimensions {
             let mut inner = RawTexture::new(&mut ctx.backend, self.size).unwrap_bug();
             inner.add_framebuffer(&mut ctx.backend);
@@ -616,7 +587,7 @@ impl Texture {
                 self.size,
                 (0, 0),
                 &Default::default(),
-            )?;
+            );
 
             self.inner = Rc::new(inner);
         } else if let Some(inner) = Rc::get_mut(&mut self.inner) {
@@ -624,10 +595,10 @@ impl Texture {
                 inner.add_framebuffer(&mut ctx.backend);
             }
         } else {
-            self.inner = Rc::new(RawTexture::clone_as_target(&self.inner, &mut ctx.backend)?);
+            self.inner = Rc::new(RawTexture::clone_as_target(&self.inner, &mut ctx.backend));
         }
 
-        Rc::get_mut(&mut self.inner).ok_or_else(|| unreachable!())
+        Rc::get_mut(&mut self.inner).unwrap()
     }
 
     /// Stores the current state of this `Texture` in an image.
@@ -675,8 +646,8 @@ impl DrawTarget for Texture {
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
-        let target = self.prepare_as_draw_target(ctx)?;
+    ) {
+        let target = self.prepare_as_draw_target(ctx);
 
         ctx.backend.draw(
             target.framebuffer_id,
@@ -689,17 +660,13 @@ impl DrawTarget for Texture {
         )
     }
 
-    fn receive_clear_color(
-        &mut self,
-        ctx: &mut Context,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
-        let target = self.prepare_as_draw_target(ctx)?;
+    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32)) {
+        let target = self.prepare_as_draw_target(ctx);
         ctx.backend.clear_color(target.framebuffer_id, color)
     }
 
-    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
-        let target = self.prepare_as_draw_target(ctx)?;
+    fn receive_clear_depth(&mut self, ctx: &mut Context) {
+        let target = self.prepare_as_draw_target(ctx);
         ctx.backend.clear_depth(target.framebuffer_id)
     }
 
@@ -709,8 +676,8 @@ impl DrawTarget for Texture {
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
-        let target = self.prepare_as_draw_target(ctx)?;
+    ) {
+        let target = self.prepare_as_draw_target(ctx);
 
         ctx.backend.debug_draw(
             false,
@@ -728,8 +695,8 @@ impl DrawTarget for Texture {
         lower_left: (i32, i32),
         upper_right: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
-        let target = self.prepare_as_draw_target(ctx)?;
+    ) {
+        let target = self.prepare_as_draw_target(ctx);
 
         ctx.backend.debug_draw(
             true,

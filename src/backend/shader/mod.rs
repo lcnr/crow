@@ -5,8 +5,6 @@ use std::{
 
 use gl::types::*;
 
-use crate::ErrDontCare;
-
 /// `position` is at location 0 in both programs
 const POSITION_ATTR: GLuint = 0;
 /// We never use an offset into the vertex buffer
@@ -76,7 +74,7 @@ fn compile_shader(src: &str, ty: GLenum) -> GLuint {
 }
 
 /// uses the created program
-fn compile_program(vertex: &str, fragment: &str) -> Result<GLuint, ErrDontCare> {
+fn compile_program(vertex: &str, fragment: &str) -> GLuint {
     let vs = compile_shader(vertex, gl::VERTEX_SHADER);
     let fs = compile_shader(fragment, gl::FRAGMENT_SHADER);
     unsafe {
@@ -131,12 +129,12 @@ fn compile_program(vertex: &str, fragment: &str) -> Result<GLuint, ErrDontCare> 
         gl::DeleteShader(vs);
 
         // SAFETY: no OpenGlState is currently alive
-        super::update_program(program)?;
+        super::update_program(program);
 
         // SAFETY: `colorNumber` is zero, which is less than `GL_MAX_DRAW_BUFFERS`
         let color_str = CString::new("color").unwrap();
         gl::BindFragDataLocation(program, 0, color_str.as_ptr());
-        Ok(program)
+        program
     }
 }
 
@@ -191,8 +189,8 @@ pub struct Program {
 }
 
 impl Program {
-    pub fn new() -> Result<(Self, Uniforms), ErrDontCare> {
-        let program = compile_program(VERTEX, FRAGMENT)?;
+    pub fn new() -> (Self, Uniforms) {
+        let program = compile_program(VERTEX, FRAGMENT);
         let mut vao = 0;
         let mut vbo = 0;
 
@@ -234,7 +232,7 @@ impl Program {
         };
 
         let uniforms = prog.get_uniforms();
-        Ok((prog, uniforms))
+        (prog, uniforms)
     }
 
     pub fn get_uniforms(&self) -> Uniforms {
@@ -307,11 +305,11 @@ pub struct DebugProgram {
 }
 
 impl DebugProgram {
-    pub fn new() -> Result<(Self, DebugUniforms), ErrDontCare> {
+    pub fn new() -> (Self, DebugUniforms) {
         let program = compile_program(
             include_str!("vertex_debug.glsl"),
             include_str!("fragment_debug.glsl"),
-        )?;
+        );
 
         let mut vao = [0; 2];
         let mut vbo = [0; 2];
@@ -373,7 +371,7 @@ impl DebugProgram {
         let line_color_uniform = get_uniform_id(program, "line_color");
         let start_end = get_uniform_id(program, "start_end");
 
-        Ok((
+        (
             Self {
                 id: program,
                 vao,
@@ -383,7 +381,7 @@ impl DebugProgram {
                 line_color: line_color_uniform,
                 start_end,
             },
-        ))
+        )
     }
 }
 

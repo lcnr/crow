@@ -2,7 +2,7 @@ use gl::types::*;
 
 use crate::{
     backend::shader::{DebugUniforms, Uniforms},
-    color, BlendMode, ErrDontCare,
+    color, BlendMode,
 };
 
 fn update_blend_mode(blend_mode: BlendMode) {
@@ -50,10 +50,10 @@ impl OpenGlState {
         debug_uniforms: DebugUniforms,
         (program, vao): (GLuint, GLuint),
         window_dimensions: (u32, u32),
-    ) -> Result<Self, ErrDontCare> {
+    ) -> Self {
         unsafe {
             // SAFETY: i am the senate
-            super::update_program(program)?;
+            super::update_program(program);
 
             // SAFETY: vao was previously returned from `glGenVertexArrays`.
             gl::BindVertexArray(vao);
@@ -153,7 +153,7 @@ impl OpenGlState {
             // SAFETY: `flip_horizontally` is declared as a `bool`
             gl::Uniform1ui(uniforms.flip_horizontally, flip_horizontally as _);
 
-            Ok(Self {
+            Self {
                 uniforms,
                 vao,
                 debug_uniforms,
@@ -177,19 +177,17 @@ impl OpenGlState {
                 // set `debug_color` and `debug_start_end` to the default value
                 debug_color: (0.0, 0.0, 0.0, 0.0),
                 debug_start_end: (0.0, 0.0, 0.0, 0.0),
-            })
+            }
         }
     }
 
-    pub fn update_program(&mut self, program: GLuint) -> Result<(), ErrDontCare> {
+    pub fn update_program(&mut self, program: GLuint) {
         if program != self.program {
             self.program = program;
             unsafe {
                 // SAFETY: i am the senate
                 super::update_program(self.program)
             }
-        } else {
-            Ok(())
         }
     }
 

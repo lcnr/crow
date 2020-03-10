@@ -1,5 +1,5 @@
 //! A collect of useful draw modifiers.
-use crate::{Context, DrawConfig, DrawTarget, ErrDontCare, Texture};
+use crate::{Context, DrawConfig, DrawTarget, Texture};
 
 /// Can be used as a [`DrawTarget`] which modifies the scale of each draw call.
 /// This should be identical to drawing to a temporary buffer and drawing this buffer
@@ -25,7 +25,7 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
+    ) {
         self.inner.receive_draw(
             ctx,
             texture,
@@ -40,15 +40,11 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
         )
     }
 
-    fn receive_clear_color(
-        &mut self,
-        ctx: &mut Context,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32)) {
         self.inner.receive_clear_color(ctx, color)
     }
 
-    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+    fn receive_clear_depth(&mut self, ctx: &mut Context) {
         self.inner.receive_clear_depth(ctx)
     }
 
@@ -58,7 +54,7 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         self.inner.receive_line(
             ctx,
             (from.0 * self.scale.0 as i32, from.1 * self.scale.1 as i32),
@@ -73,7 +69,7 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
         lower_left: (i32, i32),
         upper_right: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         self.inner.receive_rectangle(
             ctx,
             (
@@ -112,7 +108,7 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
         texture: &Texture,
         position: (i32, i32),
         config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
+    ) {
         self.inner.receive_draw(
             ctx,
             texture,
@@ -121,15 +117,11 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
         )
     }
 
-    fn receive_clear_color(
-        &mut self,
-        ctx: &mut Context,
-        color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32)) {
         self.inner.receive_clear_color(ctx, color)
     }
 
-    fn receive_clear_depth(&mut self, ctx: &mut Context) -> Result<(), ErrDontCare> {
+    fn receive_clear_depth(&mut self, ctx: &mut Context) {
         self.inner.receive_clear_depth(ctx)
     }
 
@@ -139,7 +131,7 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         self.inner.receive_line(
             ctx,
             (from.0 - self.offset.0, from.1 - self.offset.1),
@@ -154,7 +146,7 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
         lower_left: (i32, i32),
         upper_right: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         self.inner.receive_rectangle(
             ctx,
             (lower_left.0 - self.offset.0, lower_left.1 - self.offset.1),

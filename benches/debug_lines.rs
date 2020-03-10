@@ -18,7 +18,7 @@ fn debug_lines(c: &mut Criterion) {
 
     c.bench_function("debug_lines", |b| {
         b.iter(|| {
-            ctx.clear_color(&mut surface, (0.0, 0.0, 0.0, 1.0)).unwrap();
+            ctx.clear_color(&mut surface, (0.0, 0.0, 0.0, 1.0));
 
             for i in (0..100).map(|i| i * 2) {
                 ctx.debug_line(
@@ -26,11 +26,10 @@ fn debug_lines(c: &mut Criterion) {
                     (i, i + 10),
                     (i + 20, i + 10),
                     (1.0, 0.0, 1.0, 1.0),
-                )
-                .unwrap();
+                );
             }
 
-            ctx.finalize_frame().unwrap();
+            ctx.finalize_frame();
         })
     });
 }

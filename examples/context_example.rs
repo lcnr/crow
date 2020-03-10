@@ -8,7 +8,7 @@ use crow::{
 fn main() -> Result<(), crow::Error> {
     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
 
-    let texture = Texture::load(&mut ctx, "./textures/player.png").expect("Unable to load texture");
+    let texture = Texture::load(&mut ctx, "./textures/player.png")?;
     let mut surface = ctx.window_surface();
 
     let mut fin = false;
@@ -23,10 +23,10 @@ fn main() -> Result<(), crow::Error> {
             }
         });
 
-        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0))?;
-        ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default())?;
+        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
+        ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default());
 
-        ctx.finalize_frame()?;
+        ctx.finalize_frame();
 
         if fin {
             break;

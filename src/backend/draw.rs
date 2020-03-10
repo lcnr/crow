@@ -2,7 +2,7 @@ use gl::types::*;
 
 use crate::{
     backend::{tex::RawTexture, Backend},
-    DrawConfig, ErrDontCare,
+    DrawConfig,
 };
 
 impl Backend {
@@ -16,9 +16,9 @@ impl Backend {
         source_dimensions: (u32, u32),
         source_position: (i32, i32),
         draw_config: &DrawConfig,
-    ) -> Result<(), ErrDontCare> {
+    ) {
         let s = &mut self.state;
-        s.update_program(self.program.id)?;
+        s.update_program(self.program.id);
         s.update_vao(self.program.vao);
         s.update_blend_mode(draw_config.blend_mode);
         s.update_framebuffer(target_framebuffer);
@@ -44,8 +44,6 @@ impl Backend {
             // No geometry shader is active
             gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
         }
-
-        Ok(())
     }
 
     pub fn debug_draw(
@@ -56,9 +54,9 @@ impl Backend {
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
-    ) -> Result<(), ErrDontCare> {
+    ) {
         let s = &mut self.state;
-        s.update_program(self.debug_program.id)?;
+        s.update_program(self.debug_program.id);
         s.update_vao(self.debug_program.vao[rectangle as usize]);
         s.update_framebuffer(target_framebuffer);
         s.update_viewport_dimensions(target_dimensions);
@@ -79,7 +77,5 @@ impl Backend {
             // No geometry shader is active
             gl::DrawArrays(gl::LINE_STRIP, 0, if rectangle { 5 } else { 2 });
         }
-
-        Ok(())
     }
 }

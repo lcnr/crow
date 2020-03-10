@@ -40,8 +40,8 @@ fn main() -> Result<(), crow::Error> {
                 }
             }
         });
-        ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0))?;
-        ctx.clear_color(&mut target_texture, (0.0, 0.0, 0.0, 0.0))?;
+        ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
+        ctx.clear_color(&mut target_texture, (0.0, 0.0, 0.0, 0.0));
 
         ctx.draw(
             &mut target_texture,
@@ -52,7 +52,7 @@ fn main() -> Result<(), crow::Error> {
                 color_modulation: color::RED,
                 ..Default::default()
             },
-        )?;
+        );
         ctx.draw(
             &mut target_texture,
             &texture,
@@ -62,7 +62,7 @@ fn main() -> Result<(), crow::Error> {
                 color_modulation: color::GREEN,
                 ..Default::default()
             },
-        )?;
+        );
         ctx.draw(
             &mut target_texture,
             &texture,
@@ -72,7 +72,7 @@ fn main() -> Result<(), crow::Error> {
                 color_modulation: color::BLUE,
                 ..Default::default()
             },
-        )?;
+        );
 
         ctx.draw(
             &mut ctx.window_surface(),
@@ -82,9 +82,9 @@ fn main() -> Result<(), crow::Error> {
                 scale: (4, 4),
                 ..Default::default()
             },
-        )?;
+        );
 
-        ctx.finalize_frame()?;
+        ctx.finalize_frame();
         thread::sleep(Duration::from_millis(1000 / 30));
 
         if fin {

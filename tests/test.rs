@@ -55,9 +55,9 @@ pub fn test(name: &str, f: TestFn) -> Result<(), ()> {
 fn simple(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut a = Texture::new(ctx, (32, 32))?;
     let mut b = Texture::new(ctx, (32, 32))?;
-    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
-    ctx.clear_color(&mut b, (0.0, 1.0, 0.0, 1.0))?;
-    ctx.draw(&mut a, &b, (16, 16), &DrawConfig::default())?;
+    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0));
+    ctx.clear_color(&mut b, (0.0, 1.0, 0.0, 1.0));
+    ctx.draw(&mut a, &b, (16, 16), &DrawConfig::default());
 
     Ok(a.get_image_data(ctx))
 }
@@ -75,8 +75,8 @@ fn from_image(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
         )
         .unwrap(),
     )?;
-    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
-    ctx.draw(&mut a, &b, (1, 1), &DrawConfig::default())?;
+    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0));
+    ctx.draw(&mut a, &b, (1, 1), &DrawConfig::default());
 
     Ok(a.get_image_data(ctx))
 }
@@ -84,8 +84,8 @@ fn from_image(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
 fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut a = Texture::new(ctx, (32, 32))?;
     let mut b = Texture::new(ctx, (32, 32))?;
-    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
-    ctx.clear_color(&mut b, (0.5, 0.0, 0.5, 1.0))?;
+    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0));
+    ctx.clear_color(&mut b, (0.5, 0.0, 0.5, 1.0));
     ctx.draw(
         &mut a,
         &b,
@@ -99,7 +99,7 @@ fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
             ],
             ..Default::default()
         },
-    )?;
+    );
 
     Ok(a.get_image_data(ctx))
 }
@@ -110,11 +110,11 @@ fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut b = big.get_section((16, 0), (16, 16));
     let mut c = big.get_section((32, 0), (16, 16));
 
-    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0))?;
-    ctx.clear_color(&mut b, (0.0, 1.0, 0.0, 1.0))?;
-    ctx.clear_color(&mut c, (0.0, 0.0, 1.0, 1.0))?;
+    ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0));
+    ctx.clear_color(&mut b, (0.0, 1.0, 0.0, 1.0));
+    ctx.clear_color(&mut c, (0.0, 0.0, 1.0, 1.0));
 
-    ctx.draw(&mut c, &b, (0, 8), &DrawConfig::default())?;
+    ctx.draw(&mut c, &b, (0, 8), &DrawConfig::default());
     ctx.draw(
         &mut a,
         &c,
@@ -123,26 +123,26 @@ fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
             flip_vertically: true,
             ..Default::default()
         },
-    )?;
+    );
 
     Ok(a.get_image_data(ctx))
 }
 
 fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0));
 
     let source = Texture::load(ctx, "textures/section_test.png")?;
     let source = source.get_section((3, 4), (3, 2));
 
-    ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default())?;
+    ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default());
 
     Ok(target.get_image_data(ctx))
 }
 
 fn section_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0));
 
     let source = Texture::load(ctx, "textures/section_test.png")?;
     let source = source.get_section((3, 4), (3, 2));
@@ -152,14 +152,14 @@ fn section_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
         &source,
         (1, 2),
         &DrawConfig::default(),
-    )?;
+    );
 
     Ok(target.get_image_data(ctx))
 }
 
 fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0));
 
     let source = Texture::load(ctx, "textures/section_test.png")?;
     let source = source.get_section((3, 4), (3, 2));
@@ -173,14 +173,14 @@ fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
             flip_horizontally: true,
             ..Default::default()
         },
-    )?;
+    );
 
     Ok(target.get_image_data(ctx))
 }
 
 fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0));
 
     let source = Texture::load(ctx, "textures/section_test.png")?;
     let source = source.get_section((3, 4), (3, 2));
@@ -194,38 +194,38 @@ fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
             flip_horizontally: true,
             ..Default::default()
         },
-    )?;
+    );
 
     Ok(target.get_image_data(ctx))
 }
 
 fn zero_section(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0));
 
     let source = Texture::load(ctx, "textures/section_test.png")?;
     let source = source.get_section((3, 4), (0, 0));
 
-    ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default())?;
+    ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default());
 
     Ok(target.get_image_data(ctx))
 }
 
 fn debug_lines(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0));
 
-    ctx.debug_line(&mut target, (2, 2), (2, 8), (1.0, 0.0, 0.0, 1.0))?;
-    ctx.debug_line(&mut target, (4, 9), (8, 9), (1.0, 0.0, 0.0, 1.0))?;
+    ctx.debug_line(&mut target, (2, 2), (2, 8), (1.0, 0.0, 0.0, 1.0));
+    ctx.debug_line(&mut target, (4, 9), (8, 9), (1.0, 0.0, 0.0, 1.0));
 
     Ok(target.get_image_data(ctx))
 }
 
 fn debug_rectangle(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut target = Texture::new(ctx, (10, 10))?;
-    ctx.clear_color(&mut target, (1.0, 0.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (1.0, 0.0, 0.0, 1.0));
 
-    ctx.debug_rectangle(&mut target, (1, 1), (4, 3), (0.0, 1.0, 0.0, 1.0))?;
+    ctx.debug_rectangle(&mut target, (1, 1), (4, 3), (0.0, 1.0, 0.0, 1.0));
 
     Ok(target.get_image_data(ctx))
 }
@@ -233,10 +233,10 @@ fn debug_rectangle(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
 fn lines_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     let mut image = Texture::new(ctx, (10, 10))?;
     let mut target = Offset::new(&mut image, (-1, -2));
-    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0))?;
+    ctx.clear_color(&mut target, (0.0, 1.0, 0.0, 1.0));
 
-    ctx.debug_line(&mut target, (1, 0), (1, 8), (1.0, 0.0, 0.0, 1.0))?;
-    ctx.debug_line(&mut target, (3, 7), (7, 7), (1.0, 0.0, 0.0, 1.0))?;
+    ctx.debug_line(&mut target, (1, 0), (1, 8), (1.0, 0.0, 0.0, 1.0));
+    ctx.debug_line(&mut target, (3, 7), (7, 7), (1.0, 0.0, 0.0, 1.0));
 
     Ok(image.get_image_data(ctx))
 }

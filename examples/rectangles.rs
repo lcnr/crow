@@ -65,7 +65,7 @@ fn main() -> Result<(), crow::Error> {
             }
         });
 
-        ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0))?;
+        ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
 
         if frames_to_next == 0 {
             frames_to_next = rng.gen_range(50, 170);
@@ -97,7 +97,7 @@ fn main() -> Result<(), crow::Error> {
             &mut ctx,
         )?;
 
-        ctx.finalize_frame()?;
+        ctx.finalize_frame();
         if fin {
             break Ok(());
         }
@@ -136,7 +136,7 @@ pub fn draw_rectangles(
                     color_modulation: mat(rectangle.color),
                     ..Default::default()
                 },
-            )?;
+            );
 
             ctx.draw(
                 surface,
@@ -147,7 +147,7 @@ pub fn draw_rectangles(
                     flip_horizontally: true,
                     ..Default::default()
                 },
-            )?;
+            );
         }
 
         let vertical_section =
@@ -160,7 +160,7 @@ pub fn draw_rectangles(
                 color_modulation: mat(rectangle.color),
                 ..Default::default()
             },
-        )?;
+        );
 
         ctx.draw(
             surface,
@@ -171,7 +171,7 @@ pub fn draw_rectangles(
                 flip_horizontally: true,
                 ..Default::default()
             },
-        )?;
+        );
 
         let horizontal_height =
             rectangle.position.1 + rectangle.size.1 as i32 - horizontal.height() as i32;
@@ -189,7 +189,7 @@ pub fn draw_rectangles(
                     color_modulation: mat(rectangle.color),
                     ..Default::default()
                 },
-            )?;
+            );
             ctx.draw(
                 surface,
                 horizontal,
@@ -202,7 +202,7 @@ pub fn draw_rectangles(
                     flip_vertically: true,
                     ..Default::default()
                 },
-            )?;
+            );
         }
 
         let horizontal_section = horizontal.get_section(
@@ -217,7 +217,7 @@ pub fn draw_rectangles(
                 color_modulation: mat(rectangle.color),
                 ..Default::default()
             },
-        )?;
+        );
         ctx.draw(
             surface,
             &horizontal_section,
@@ -227,7 +227,7 @@ pub fn draw_rectangles(
                 flip_vertically: true,
                 ..Default::default()
             },
-        )?;
+        );
     }
 
     Ok(())

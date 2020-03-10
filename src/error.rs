@@ -1,10 +1,3 @@
-use std::io;
-
-/// An error in cases where dealing with errors is hard.
-/// This will be slowly replaced by useful error types later on.
-#[derive(Debug, Clone, Copy)]
-pub struct ErrDontCare;
-
 /// The super type of every error in this crate.
 /// If this is used as a return type, the question mark operator can always be used.
 ///
@@ -18,49 +11,60 @@ pub struct ErrDontCare;
 ///
 ///     let image = Texture::load(&mut ctx, "this/path/does/not/exist.png")?;
 ///
-///     ctx.draw(&mut ctx.window_surface(), &image, (0, 0), &Default::default())?;
+///     ctx.draw(&mut ctx.window_surface(), &image, (0, 0), &Default::default());
 ///     
-///     ctx.finalize_frame()?;
+///     ctx.finalize_frame();
 ///     Ok(())
 /// }
 ///
 /// ```
 #[derive(Debug)]
 pub enum Error {
-    IoError(io::Error),
     /// Tried to create a texture with dimensions which are
     /// greater than the maximum allowed texture size or zero.
-    InvalidTextureSize {
-        width: u32,
-        height: u32,
-    },
-    /// An error condition which is not further specified,
-    /// will be slowly replaced by more useful error kinds.
-    Unspecified,
+    InvalidTextureSize { width: u32, height: u32 },
+    /// Error created by `image::load`.
+    ImageError(image::ImageError),
+    /// Error created by `glutin::ContextBuilder::build_windowed`.
+    CreationError(glutin::CreationError),
+    /// Error created by `glutin::ContextWrapper::make_current`.
+    ContextError(glutin::ContextError),
 }
 
-impl From<ErrDontCare> for Error {
-    fn from(_: ErrDontCare) -> Self {
-        Error::Unspecified
+#[derive(Debug)]
+pub enum NewContextError {
+    /// Error created by `glutin::ContextBuilder::build_windowed`.
+    CreationError(glutin::CreationError),
+    /// Error created by `glutin::ContextWrapper::make_current`.
+    ContextError(glutin::ContextError),
+}
+
+impl From<NewContextError> for Error {
+    fn from(e: NewContextError) -> Self {
+        match e {
+            NewContextError::CreationError(e) => Error::CreationError(e),
+            NewContextError::ContextError(e) => Error::ContextError(e),
+        }
     }
 }
 
 /// An error returned by `Texture::load`.
 #[derive(Debug)]
 pub enum LoadTextureError {
-    IoError(io::Error),
+    /// Tried to create a texture with dimensions which are
+    /// greater than the maximum allowed texture size or zero.
     InvalidTextureSize { width: u32, height: u32 },
-    Unspecified,
+    /// Error created by `image::load`.
+    ImageError(image::ImageError),
 }
 
 impl From<LoadTextureError> for Error {
     fn from(e: LoadTextureError) -> Self {
         match e {
-            LoadTextureError::IoError(io) => Error::IoError(io),
             LoadTextureError::InvalidTextureSize { width, height } => {
                 Error::InvalidTextureSize { width, height }
             }
-            LoadTextureError::Unspecified => Error::Unspecified,
+            LoadTextureError::ImageError(e) => Error::ImageError(e),
         }
     }
 }
@@ -68,6 +72,8 @@ impl From<LoadTextureError> for Error {
 /// An error returned by `Texture::new`.
 #[derive(Debug)]
 pub enum NewTextureError {
+    /// Tried to create a texture with dimensions which are
+    /// greater than the maximum allowed texture size or zero.
     InvalidTextureSize { width: u32, height: u32 },
 }
 

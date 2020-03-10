@@ -4,7 +4,7 @@ use gl::types::*;
 
 use image::RgbaImage;
 
-use crate::{backend::Backend, ErrDontCare, NewTextureError, UnwrapBug};
+use crate::{backend::Backend, NewTextureError, UnwrapBug};
 
 #[derive(Debug)]
 pub struct RawTexture {
@@ -211,10 +211,10 @@ impl RawTexture {
         self.has_framebuffer = true;
     }
 
-    pub fn clone_as_target(previous: &Self, backend: &mut Backend) -> Result<Self, ErrDontCare> {
+    pub fn clone_as_target(previous: &Self, backend: &mut Backend) -> Self {
         let mut clone = Self::new(backend, previous.dimensions).unwrap_bug();
         clone.add_framebuffer(backend);
-        backend.clear_color(clone.framebuffer_id, (0.0, 0.0, 0.0, 0.0))?;
+        backend.clear_color(clone.framebuffer_id, (0.0, 0.0, 0.0, 0.0));
         backend.draw(
             clone.framebuffer_id,
             previous.dimensions,
@@ -223,8 +223,8 @@ impl RawTexture {
             previous.dimensions,
             (0, 0),
             &Default::default(),
-        )?;
+        );
 
-        Ok(clone)
+        clone
     }
 }
