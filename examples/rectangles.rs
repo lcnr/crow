@@ -5,7 +5,7 @@ use std::{
 };
 
 use crow::{
-    glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
+    glutin::{Event, WindowBuilder, WindowEvent},
     target::{Offset, Scaled},
     Context, DrawConfig, DrawTarget, Texture,
 };
@@ -26,7 +26,6 @@ fn main() -> Result<(), crow::Error> {
         WindowBuilder::new()
             .with_dimensions(From::from((WINDOW_SIZE.0 * SCALE, WINDOW_SIZE.1 * SCALE)))
             .with_resizable(false),
-        EventsLoop::new(),
     )?;
 
     let rectangle_vertical = Texture::load(&mut ctx, "textures/rectangle_vertical.png")?;

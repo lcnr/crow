@@ -6,12 +6,12 @@ use std::{thread, time::Duration};
 
 use crow::{
     color,
-    glutin::{ElementState, Event, EventsLoop, VirtualKeyCode, WindowBuilder, WindowEvent},
+    glutin::{ElementState, Event, VirtualKeyCode, WindowBuilder, WindowEvent},
     BlendMode, Context, DrawConfig, Texture,
 };
 
 fn main() -> Result<(), crow::Error> {
-    let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
+    let mut ctx = Context::new(WindowBuilder::new())?;
 
     let mut surface = ctx.window_surface();
 

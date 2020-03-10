@@ -4,10 +4,10 @@
 /// # Examples
 ///
 /// ```rust, no_run
-/// use crow::{Context, glutin::{WindowBuilder, EventsLoop}, Texture};
+/// use crow::{Context, glutin::WindowBuilder, Texture};
 ///
 /// fn main() -> Result<(), crow::Error> {
-///     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
+///     let mut ctx = Context::new(WindowBuilder::new())?;
 ///
 ///     let image = Texture::load(&mut ctx, "this/path/does/not/exist.png")?;
 ///

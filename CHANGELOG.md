@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0
+
+- change `fn Context::new` to not require an `EventsLoop` as an argument.
+
 ## 0.4.0
 
 - implement actual error types and update function return types.

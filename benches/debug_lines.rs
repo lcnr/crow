@@ -1,16 +1,12 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use crow::{
-    glutin::{EventsLoop, WindowBuilder},
-    Context,
-};
+use crow::{glutin::WindowBuilder, Context};
 
 fn debug_lines(c: &mut Criterion) {
     let mut ctx = Context::new(
         WindowBuilder::new()
             .with_dimensions(From::from((720, 480)))
             .with_visibility(false),
-        EventsLoop::new(),
     )
     .unwrap();
 

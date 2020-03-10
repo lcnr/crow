@@ -5,7 +5,7 @@ use image::RgbaImage;
 use rand::prelude::*;
 
 use crow::{
-    glutin::{EventsLoop, WindowBuilder},
+    glutin::WindowBuilder,
     target::{Offset, Scaled},
     Context, DrawConfig, Texture,
 };
@@ -17,7 +17,6 @@ pub fn test(name: &str, f: TestFn) -> Result<(), ()> {
         WindowBuilder::new()
             .with_dimensions(From::from((720, 480)))
             .with_visibility(false),
-        EventsLoop::new(),
     )
     .unwrap();
 

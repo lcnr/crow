@@ -69,10 +69,8 @@ pub struct Backend {
 }
 
 impl Backend {
-    pub fn initialize(
-        window: WindowBuilder,
-        events_loop: EventsLoop,
-    ) -> Result<Self, NewContextError> {
+    pub fn initialize(window: WindowBuilder) -> Result<Self, NewContextError> {
+        let events_loop = EventsLoop::new();
         let gl_context = glutin::ContextBuilder::new()
             .with_depth_buffer(16)
             .with_vsync(false)

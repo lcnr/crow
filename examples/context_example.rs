@@ -1,12 +1,12 @@
 //! A simple example drawing a texture.
 
 use crow::{
-    glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
+    glutin::{Event, WindowBuilder, WindowEvent},
     Context, DrawConfig, Texture,
 };
 
 fn main() -> Result<(), crow::Error> {
-    let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
+    let mut ctx = Context::new(WindowBuilder::new())?;
 
     let texture = Texture::load(&mut ctx, "./textures/player.png")?;
     let mut surface = ctx.window_surface();

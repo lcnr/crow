@@ -2,11 +2,7 @@ use std::{collections::VecDeque, mem};
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use crow::{
-    glutin::{EventsLoop, WindowBuilder},
-    target::Scaled,
-    Context, DrawConfig, DrawTarget, Texture,
-};
+use crow::{glutin::WindowBuilder, target::Scaled, Context, DrawConfig, DrawTarget, Texture};
 
 use rand::{Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
@@ -26,7 +22,6 @@ fn rectangles(c: &mut Criterion) {
             .with_dimensions(From::from((WINDOW_SIZE.0 * SCALE, WINDOW_SIZE.1 * SCALE)))
             .with_visibility(false)
             .with_resizable(false),
-        EventsLoop::new(),
     )
     .unwrap();
 

@@ -4,12 +4,12 @@
 //!
 //! ```no_run
 //! use crow::{
-//!     glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
+//!     glutin::{Event, WindowBuilder, WindowEvent},
 //!     Context, DrawConfig, Texture,
 //! };
 //!
 //! fn main() -> Result<(), crow::Error> {
-//!     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
+//!     let mut ctx = Context::new(WindowBuilder::new())?;
 //!
 //!     let texture = Texture::load(&mut ctx, "path/to/texture.png")?;
 //!     let mut surface = ctx.window_surface();
@@ -205,12 +205,12 @@ static INITIALIZED: AtomicBool = AtomicBool::new(false);
 ///
 /// ```no_run
 /// use crow::{
-///     glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
+///     glutin::{Event, WindowBuilder, WindowEvent},
 ///     Context, DrawConfig, Texture,
 /// };
 ///
 /// fn main() -> Result<(), crow::Error> {
-///     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
+///     let mut ctx = Context::new(WindowBuilder::new())?;
 ///
 ///     let texture = Texture::load(&mut ctx, "path/to/texture.png")?;
 ///     let mut surface = ctx.window_surface();
@@ -253,12 +253,12 @@ impl Context {
     /// The previous context has to be dropped using the method
     /// `Context::unlock_unchecked()`. This is a workaround and
     /// will probably be fixed in a future release.
-    pub fn new(window: WindowBuilder, events_loop: EventsLoop) -> Result<Self, NewContextError> {
+    pub fn new(window: WindowBuilder) -> Result<Self, NewContextError> {
         if INITIALIZED.compare_and_swap(false, true, Ordering::AcqRel) {
             panic!("Tried to initialize a second Context");
         }
 
-        let backend = Backend::initialize(window, events_loop)?;
+        let backend = Backend::initialize(window)?;
         Ok(Self { backend })
     }
 
@@ -399,9 +399,9 @@ impl Context {
     /// # Examples
     ///
     /// ```no_run
-    /// use crow::{Context, glutin::{EventsLoop, WindowBuilder}};
+    /// use crow::{Context, glutin::WindowBuilder};
     ///
-    /// let context = Context::new(WindowBuilder::new().with_title("Starting"), EventsLoop::new())
+    /// let context = Context::new(WindowBuilder::new().with_title("Starting"))
     ///     .expect("unable to create a context");
     ///
     /// context.window().set_title("Running");

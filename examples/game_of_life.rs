@@ -4,9 +4,7 @@
 //! to advance a generation press space.
 
 use crow::{
-    glutin::{
-        ElementState, Event, EventsLoop, MouseButton, VirtualKeyCode, WindowBuilder, WindowEvent,
-    },
+    glutin::{ElementState, Event, MouseButton, VirtualKeyCode, WindowBuilder, WindowEvent},
     target::Scaled,
     Context, DrawConfig, Texture,
 };
@@ -24,10 +22,7 @@ fn mat((r, g, b): (f32, f32, f32)) -> [[f32; 4]; 4] {
 }
 
 fn main() -> Result<(), crow::Error> {
-    let mut ctx = Context::new(
-        WindowBuilder::new().with_dimensions(From::from(WINDOW_SIZE)),
-        EventsLoop::new(),
-    )?;
+    let mut ctx = Context::new(WindowBuilder::new().with_dimensions(From::from(WINDOW_SIZE)))?;
 
     let mut texture = Texture::new(&mut ctx, (1, 1))?;
     ctx.clear_color(&mut texture, (1.0, 1.0, 1.0, 1.0));

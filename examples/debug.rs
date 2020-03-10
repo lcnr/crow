@@ -3,12 +3,12 @@
 use std::{thread, time::Duration};
 
 use crow::{
-    glutin::{Event, EventsLoop, WindowBuilder, WindowEvent},
+    glutin::{Event, WindowBuilder, WindowEvent},
     Context,
 };
 
 fn main() -> Result<(), crow::Error> {
-    let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
+    let mut ctx = Context::new(WindowBuilder::new())?;
 
     let mut surface = ctx.window_surface();
 
