@@ -29,7 +29,7 @@ fn debug_lines(c: &mut Criterion) {
                 );
             }
 
-            ctx.finalize_frame();
+            ctx.finalize_frame().unwrap();
         })
     });
 }

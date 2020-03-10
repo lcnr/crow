@@ -84,7 +84,7 @@ fn main() -> Result<(), crow::Error> {
             },
         );
 
-        ctx.finalize_frame();
+        ctx.finalize_frame()?;
         thread::sleep(Duration::from_millis(1000 / 30));
 
         if fin {

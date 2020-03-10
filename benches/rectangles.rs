@@ -74,7 +74,7 @@ fn rectangles(c: &mut Criterion) {
                 &mut ctx,
             );
 
-            ctx.finalize_frame();
+            ctx.finalize_frame().unwrap();
         })
     });
 }

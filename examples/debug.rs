@@ -31,7 +31,7 @@ fn main() -> Result<(), crow::Error> {
         ctx.debug_rectangle(&mut surface, (50, 250), (150, 300), (1.0, 0.0, 0.0, 1.0));
         ctx.debug_rectangle(&mut surface, (150, 400), (50, 350), (1.0, 0.0, 0.0, 1.0));
 
-        ctx.finalize_frame();
+        ctx.finalize_frame()?;
         thread::sleep(Duration::from_millis(1000 / 30));
 
         if fin {

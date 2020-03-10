@@ -29,7 +29,7 @@ use crow::{
 fn main() -> Result<(), crow::Error> {
     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
 
-    let texture = Texture::load(&mut ctx, "./textures/player.png").expect("Unable to load texture");
+    let texture = Texture::load(&mut ctx, "./textures/player.png")?;
     let mut surface = ctx.window_surface();
 
     let mut fin = false;

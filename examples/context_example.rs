@@ -26,7 +26,7 @@ fn main() -> Result<(), crow::Error> {
         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default());
 
-        ctx.finalize_frame();
+        ctx.finalize_frame()?;
 
         if fin {
             break;

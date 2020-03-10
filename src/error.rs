@@ -13,7 +13,7 @@
 ///
 ///     ctx.draw(&mut ctx.window_surface(), &image, (0, 0), &Default::default());
 ///     
-///     ctx.finalize_frame();
+///     ctx.finalize_frame()?;
 ///     Ok(())
 /// }
 ///
@@ -27,11 +27,13 @@ pub enum Error {
     ImageError(image::ImageError),
     /// Error created by `glutin::ContextBuilder::build_windowed`.
     CreationError(glutin::CreationError),
-    /// Error created by `glutin::ContextWrapper::make_current`.
+    /// Error created by `glutin::ContextWrapper::make_current`
+    /// or `glutin::ContextWrapper::swap_buffers`.
     ContextError(glutin::ContextError),
 }
 
 #[derive(Debug)]
+/// The error returned by `Context::new`.
 pub enum NewContextError {
     /// Error created by `glutin::ContextBuilder::build_windowed`.
     CreationError(glutin::CreationError),
@@ -48,7 +50,22 @@ impl From<NewContextError> for Error {
     }
 }
 
-/// An error returned by `Texture::load`.
+/// The error returned by `Context::finalize_frame`.
+#[derive(Debug)]
+pub enum FinalizeError {
+    /// Error created by `glutin::ContextWrapper::swap_buffers`.
+    ContextError(glutin::ContextError),
+}
+
+impl From<FinalizeError> for Error {
+    fn from(e: FinalizeError) -> Self {
+        match e {
+            FinalizeError::ContextError(e) => Error::ContextError(e),
+        }
+    }
+}
+
+/// The error returned by `Texture::load`.
 #[derive(Debug)]
 pub enum LoadTextureError {
     /// Tried to create a texture with dimensions which are
@@ -69,7 +86,7 @@ impl From<LoadTextureError> for Error {
     }
 }
 
-/// An error returned by `Texture::new`.
+/// The error returned by `Texture::new`.
 #[derive(Debug)]
 pub enum NewTextureError {
     /// Tried to create a texture with dimensions which are

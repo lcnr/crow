@@ -96,7 +96,7 @@ fn main() -> Result<(), crow::Error> {
             }
         }
 
-        ctx.finalize_frame();
+        ctx.finalize_frame()?;
 
         if fin {
             break;

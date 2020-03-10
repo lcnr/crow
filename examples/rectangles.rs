@@ -97,7 +97,7 @@ fn main() -> Result<(), crow::Error> {
             &mut ctx,
         )?;
 
-        ctx.finalize_frame();
+        ctx.finalize_frame()?;
         if fin {
             break Ok(());
         }

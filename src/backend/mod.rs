@@ -5,7 +5,7 @@ use static_assertions::{assert_type_eq_all, const_assert_eq};
 use gl::types::*;
 use glutin::{ContextWrapper, EventsLoop, PossiblyCurrent, Window, WindowBuilder};
 
-use crate::NewContextError;
+use crate::{FinalizeError, NewContextError};
 
 mod draw;
 mod shader;
@@ -131,7 +131,11 @@ impl Backend {
     }
 
     pub fn window_dimensions(&self) -> (u32, u32) {
-        self.gl_context.window().get_inner_size().unwrap().into()
+        if let Some(dimensions) = self.gl_context.window().get_inner_size() {
+            dimensions.into()
+        } else {
+            bug!("failed to get window_dimensions")
+        }
     }
 
     pub fn take_screenshot(&mut self, (width, height): (u32, u32)) -> Vec<u8> {
@@ -230,10 +234,13 @@ impl Backend {
         }
     }
 
-    pub fn finalize_frame(&mut self) {
-        self.gl_context.swap_buffers().unwrap();
+    pub fn finalize_frame(&mut self) -> Result<(), FinalizeError> {
+        self.gl_context
+            .swap_buffers()
+            .map_err(FinalizeError::ContextError)?;
         self.state.update_framebuffer(0);
-        self.clear_depth(0)
+        self.clear_depth(0);
+        Ok(())
     }
 
     pub fn constants(&self) -> &GlConstants {

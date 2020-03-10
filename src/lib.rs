@@ -11,7 +11,7 @@
 //! fn main() -> Result<(), crow::Error> {
 //!     let mut ctx = Context::new(WindowBuilder::new(), EventsLoop::new())?;
 //!
-//!     let texture = Texture::load(&mut ctx, "path/to/texture.png").expect("Unable to load texture");
+//!     let texture = Texture::load(&mut ctx, "path/to/texture.png")?;
 //!     let mut surface = ctx.window_surface();
 //!
 //!     let mut fin = false;
@@ -27,7 +27,7 @@
 //!         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
 //!         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default());
 //!
-//!         ctx.finalize_frame();
+//!         ctx.finalize_frame()?;
 //!
 //!         if fin {
 //!             break;
@@ -215,7 +215,7 @@ static INITIALIZED: AtomicBool = AtomicBool::new(false);
 ///         ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
 ///         ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default());
 ///
-///         ctx.finalize_frame();
+///         ctx.finalize_frame()?;
 ///
 ///         if fin {
 ///             break;
@@ -385,7 +385,7 @@ impl Context {
     /// use crow::{Context, glutin::{EventsLoop, WindowBuilder}};
     ///
     /// let context = Context::new(WindowBuilder::new().with_title("Starting"), EventsLoop::new())
-    ///     .expect("Unable to create a context");
+    ///     .expect("unable to create a context");
     ///
     /// context.window().set_title("Running");
     /// ```
@@ -398,7 +398,7 @@ impl Context {
     }
 
     /// Presents the current frame to the screen and prepares for the next frame.
-    pub fn finalize_frame(&mut self) {
+    pub fn finalize_frame(&mut self) -> Result<(), FinalizeError> {
         self.backend.finalize_frame()
     }
 
