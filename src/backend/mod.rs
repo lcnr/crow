@@ -1,4 +1,4 @@
-use std::{cmp, convert::TryFrom};
+use std::{cmp, convert::TryFrom, ffi::CStr};
 
 use static_assertions::{assert_type_eq_all, const_assert_eq};
 
@@ -21,6 +21,9 @@ assert_type_eq_all!(GLfloat, f32);
 const_assert_eq!(true as GLboolean, gl::TRUE);
 const_assert_eq!(false as GLboolean, gl::FALSE);
 
+#[allow(non_upper_case_globals)]
+const ARB_framebuffer_no_attachments: &[u8] = b"GL_ARB_framebuffer_no_attachments\0";
+
 #[derive(Debug)]
 pub struct GlConstants {
     pub max_texture_size: (u32, u32),
@@ -38,25 +41,52 @@ impl GlConstants {
             if let Ok(v) = u32::try_from(v) {
                 v
             } else {
-                bug!("Unexpected `{}`: {}", name, v)
+                bug!("unexpected `max_{}`: {}", name, v)
             }
         }
 
         // must be at least 1024
-        let texture_size = get(gl::MAX_TEXTURE_SIZE, "max_texture_size");
-        let renderbuffer_size = get(gl::MAX_RENDERBUFFER_SIZE, "max_renderbuffer_size");
-
+        let texture_size = get(gl::MAX_TEXTURE_SIZE, "texture_size");
+        let renderbuffer_size = get(gl::MAX_RENDERBUFFER_SIZE, "renderbuffer_size");
         let size = cmp::min(texture_size, renderbuffer_size);
-        // must be at least 16384
-        let framebuffer_width = get(gl::MAX_FRAMEBUFFER_WIDTH, "max_framebuffer_width");
-        // must be at least 16384
-        let framebuffer_height = get(gl::MAX_FRAMEBUFFER_HEIGHT, "max_framebuffer_height");
 
+        // FIXES https://github.com/lcnr/crow/issues/15
+        // only check the max framebuffer size if the extension
+        // `ARB_framebuffer_no_attachments` exists
+        unsafe {
+            // TODO: change the constant to `&CStr` one `CStr::from_bytes_with_nul_unchecked` is const
+            let expected_extension =
+                CStr::from_bytes_with_nul(ARB_framebuffer_no_attachments).unwrap();
+            for i in 0.. {
+                let extension = gl::GetStringi(gl::EXTENSIONS, i);
+                let err = gl::GetError();
+                match err {
+                    gl::NO_ERROR => {
+                        let extension = CStr::from_ptr(extension.cast());
+                        if expected_extension == extension {
+                            eprintln!("EXTENSION FOUND");
+                            let framebuffer_width =
+                                get(gl::MAX_FRAMEBUFFER_WIDTH, "framebuffer_width");
+                            let framebuffer_height =
+                                get(gl::MAX_FRAMEBUFFER_HEIGHT, "framebuffer_height");
+
+                            return GlConstants {
+                                max_texture_size: (
+                                    cmp::min(size, framebuffer_width),
+                                    cmp::min(size, framebuffer_height),
+                                ),
+                            };
+                        }
+                    }
+                    gl::INVALID_VALUE => break,
+                    err => bug!("unexpected error: {:?}", err),
+                }
+            }
+        }
+
+        eprintln!("EXTENSION NOT FOUND");
         GlConstants {
-            max_texture_size: (
-                cmp::min(size, framebuffer_width),
-                cmp::min(size, framebuffer_height),
-            ),
+            max_texture_size: (size, size),
         }
     }
 }
@@ -109,7 +139,7 @@ impl Backend {
                 .map_or((1024, 720), |s| s.into()),
         );
 
-        let constants = GlConstants::load();
+        let constants = dbg!(GlConstants::load());
 
         Ok(Self {
             state,
