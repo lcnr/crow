@@ -187,6 +187,7 @@ impl RawTexture {
             // ATTACHMENT COMPLETENESS:
             // the source object still exists and did not change its type
             // image size is not zero or greater than GL_MAX_FRAMEBUFFER_(WIDTH|HEIGHT)
+            //      [if the extension `ARB_framebuffer_no_attachments` is used]
             // no samples are attached
             // FRAMEBUFFER COMPLETENESS:
             // all attachments are ATTACHMENT COMPLETE
