@@ -38,16 +38,18 @@ fn main() -> Result<(), crow::Error> {
 
     let mut fin = false;
     loop {
-        ctx.events_loop().poll_events(|event| match event {
-            Event::WindowEvent {
+        ctx.events_loop().poll_events(|event| {
+            if let Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
-            } => fin = true,
-            _ => (),
+            } = event
+            {
+                fin = true
+            }
         });
 
-        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0))?;
-        ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default())?;
+        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
+        ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default());
 
         ctx.finalize_frame()?;
 
@@ -58,5 +60,4 @@ fn main() -> Result<(), crow::Error> {
 
     Ok(())
 }
-
 ```
