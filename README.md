@@ -14,7 +14,9 @@
 A simple and fairly efficient pixel based 2D graphics library. **crow** is designed to be easy to use and
 should allow users to do nearly everything they want without requiring custom renderers or unsafe code.
 
-The most recent documentation can be found [here](https://docs.rs/crow/0.3.0/crow/).
+The most recent documentation can be found [here](https://docs.rs/crow).
+
+The latest release can be viewed in the [0.4.0 branch](https://github.com/lcnr/crow/tree/0.4.0).
 
 You may also want to consider looking at [akari](https://github.com/lcnr/akari), a WIP showcase project.
 
