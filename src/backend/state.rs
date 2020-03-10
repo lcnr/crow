@@ -2,7 +2,7 @@ use gl::types::*;
 
 use crate::{
     backend::shader::{DebugUniforms, Uniforms},
-    color, BlendMode,
+    BlendMode,
 };
 
 fn update_blend_mode(blend_mode: BlendMode) {
@@ -98,16 +98,13 @@ impl OpenGlState {
             // SAFETY: `source_scale` is declared as a `uvec2`
             gl::Uniform2ui(uniforms.source_scale, source_scale.0, source_scale.1);
 
-            let color_modulation = color::IDENTITY;
-            // SAFETY:
-            // `color_modulation` is declared as a `mat4`
-            // `color::IDENTITY` is an array of 16 `GLfloat`.
-            gl::UniformMatrix4fv(
-                uniforms.color_modulation,
-                1,
-                gl::TRUE,
-                &color_modulation as *const _ as *const f32,
-            );
+            // By default, all uniforms are 0
+            let color_modulation = [
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0],
+            ];
 
             let source_texture_dimensions = (128, 128);
             // SAFETY: `source_texture_dimensions` is declared as a `vec2`
@@ -309,6 +306,7 @@ impl OpenGlState {
     pub fn update_color_modulation(&mut self, color_modulation: [[f32; 4]; 4]) {
         if color_modulation != self.color_modulation {
             self.color_modulation = color_modulation;
+            let color_modulation: *const _ = &self.color_modulation;
             unsafe {
                 // SAFETY:
                 // `color_modulation` is declared as a `mat4`
@@ -317,7 +315,7 @@ impl OpenGlState {
                     self.uniforms.color_modulation,
                     1,
                     gl::TRUE,
-                    &self.color_modulation as *const _ as *const f32,
+                    color_modulation.cast(),
                 )
             }
         }

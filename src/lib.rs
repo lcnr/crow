@@ -37,7 +37,20 @@
 //!     Ok(())
 //! }
 //! ```
-#![warn(clippy::clone_on_ref_ptr)]
+// #![warn(missing_doc_code_examples)]
+#![warn(
+    deprecated_in_future,
+    missing_debug_implementations,
+    trivial_casts,
+    unused_extern_crates,
+    missing_docs,
+    clippy::clone_on_ref_ptr,
+    clippy::cargo_common_metadata,
+    clippy::cast_lossless,
+    clippy::checked_conversions,
+    clippy::default_trait_access
+)]
+
 use std::{
     any, fmt,
     marker::PhantomData,
@@ -249,18 +262,22 @@ impl Context {
         Ok(Self { backend })
     }
 
+    /// Returns the dimensions of the used window.
     pub fn window_dimensions(&self) -> (u32, u32) {
         self.backend.window_dimensions()
     }
 
+    /// Returns the width of the used window.
     pub fn window_width(&self) -> u32 {
         self.window_dimensions().0
     }
 
+    /// Returns the height of the used window.
     pub fn window_height(&self) -> u32 {
         self.window_dimensions().1
     }
 
+    /// Sets the dimensions of the used window.
     pub fn resize_window(&mut self, width: u32, height: u32) {
         self.backend.resize_window(width, height)
     }
@@ -393,6 +410,7 @@ impl Context {
         self.backend.window()
     }
 
+    /// Returns the `EventsLoop` of the used window.
     pub fn events_loop(&mut self) -> &mut EventsLoop {
         self.backend.events_loop()
     }
@@ -520,6 +538,7 @@ impl Texture {
         Ok(Self::from_raw(raw))
     }
 
+    /// Creates a new texture from the given `image`.
     pub fn from_image(ctx: &mut Context, image: RgbaImage) -> Result<Self, NewTextureError> {
         let raw = RawTexture::from_image(&mut ctx.backend, image)?;
 
@@ -563,14 +582,17 @@ impl Texture {
         }
     }
 
+    /// Returns the dimensions of this texture.
     pub fn dimensions(&self) -> (u32, u32) {
         self.size
     }
 
+    /// Returns the width of this texture.
     pub fn width(&self) -> u32 {
         self.size.0
     }
 
+    /// Returns the height of this texture.
     pub fn height(&self) -> u32 {
         self.size.1
     }
@@ -586,7 +608,7 @@ impl Texture {
                 self.position,
                 self.size,
                 (0, 0),
-                &Default::default(),
+                &DrawConfig::default(),
             );
 
             self.inner = Rc::new(inner);
@@ -785,7 +807,7 @@ impl Default for DrawConfig {
             invert_color: false,
             flip_vertically: false,
             flip_horizontally: false,
-            blend_mode: Default::default(),
+            blend_mode: BlendMode::default(),
             __non_exhaustive: (),
         }
     }

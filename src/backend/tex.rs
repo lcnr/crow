@@ -4,7 +4,7 @@ use gl::types::*;
 
 use image::RgbaImage;
 
-use crate::{backend::Backend, NewTextureError, UnwrapBug};
+use crate::{backend::Backend, DrawConfig, NewTextureError, UnwrapBug};
 
 #[derive(Debug)]
 pub struct RawTexture {
@@ -19,10 +19,10 @@ impl Drop for RawTexture {
     fn drop(&mut self) {
         // SAFETY: `n` is `1` for all functions
         if self.has_framebuffer {
-            unsafe { gl::DeleteFramebuffers(1, &self.framebuffer_id as *const _) }
-            unsafe { gl::DeleteRenderbuffers(1, &self.depth_id as *const _) }
+            unsafe { gl::DeleteFramebuffers(1, &self.framebuffer_id) }
+            unsafe { gl::DeleteRenderbuffers(1, &self.depth_id) }
         }
-        unsafe { gl::DeleteTextures(1, &self.id as *const _) }
+        unsafe { gl::DeleteTextures(1, &self.id) }
     }
 }
 
@@ -45,7 +45,7 @@ impl RawTexture {
         let mut id = 0;
         unsafe {
             // SAFETY: `n` is one.
-            gl::GenTextures(1, &mut id as *mut _);
+            gl::GenTextures(1, &mut id);
             backend.state.update_texture(id);
 
             // TODO: consider using `gl::CLAMP_TO_BORDER` with an invisible border instead.
@@ -121,7 +121,7 @@ impl RawTexture {
 
         unsafe {
             // SAFETY: `n` is 1
-            gl::GenFramebuffers(1, &mut buffer as *mut _);
+            gl::GenFramebuffers(1, &mut buffer);
 
             backend.state.update_framebuffer(buffer);
 
@@ -134,7 +134,7 @@ impl RawTexture {
             gl::FramebufferTexture(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, self.id, 0);
 
             // SAFETY: `n` is 1
-            gl::GenRenderbuffers(1, &mut depth as *mut _);
+            gl::GenRenderbuffers(1, &mut depth);
 
             // SAFETY:
             // `target` is `gl::RENDERBUFFER`
@@ -182,7 +182,7 @@ impl RawTexture {
             // the current framebuffer is not the default
             // `n` is one
             // `gl::COLOR_ATTACHMENT0` has been added to the current framebuffer
-            gl::DrawBuffers(1, &gl::COLOR_ATTACHMENT0 as *const _);
+            gl::DrawBuffers(1, &gl::COLOR_ATTACHMENT0);
 
             // ATTACHMENT COMPLETENESS:
             // the source object still exists and did not change its type
@@ -222,7 +222,7 @@ impl RawTexture {
             (0, 0),
             previous.dimensions,
             (0, 0),
-            &Default::default(),
+            &DrawConfig::default(),
         );
 
         clone

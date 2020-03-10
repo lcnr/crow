@@ -13,8 +13,14 @@ pub struct Scaled<T> {
 }
 
 impl<T: DrawTarget> Scaled<T> {
+    /// Wraps the given `DrawTarget`, calling all draw calls by the given `scale`.
     pub fn new(inner: T, scale: (u32, u32)) -> Self {
         Self { inner, scale }
+    }
+
+    /// Consumes `self` and returns the inner `DrawTarget`.
+    pub fn into_inner(self) -> T {
+        self.inner
     }
 }
 
@@ -96,8 +102,14 @@ pub struct Offset<T> {
 }
 
 impl<T: DrawTarget> Offset<T> {
+    /// Wraps the given `DrawTarget`, moving all draw calls by the given `offset`.
     pub fn new(inner: T, offset: (i32, i32)) -> Self {
         Self { inner, offset }
+    }
+
+    /// Consumes `self` and returns the inner `DrawTarget`.
+    pub fn into_inner(self) -> T {
+        self.inner
     }
 }
 

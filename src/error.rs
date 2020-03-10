@@ -22,7 +22,12 @@
 pub enum Error {
     /// Tried to create a texture with dimensions which are
     /// greater than the maximum allowed texture size or zero.
-    InvalidTextureSize { width: u32, height: u32 },
+    InvalidTextureSize {
+        /// The requested width.
+        width: u32,
+        /// The requested height.
+        height: u32,
+    },
     /// Error created by `image::load`.
     ImageError(image::ImageError),
     /// Error created by `glutin::ContextBuilder::build_windowed`.
@@ -70,7 +75,12 @@ impl From<FinalizeError> for Error {
 pub enum LoadTextureError {
     /// Tried to create a texture with dimensions which are
     /// greater than the maximum allowed texture size or zero.
-    InvalidTextureSize { width: u32, height: u32 },
+    InvalidTextureSize {
+        /// The requested width.
+        width: u32,
+        /// The requested height.
+        height: u32,
+    },
     /// Error created by `image::load`.
     ImageError(image::ImageError),
 }
@@ -91,7 +101,12 @@ impl From<LoadTextureError> for Error {
 pub enum NewTextureError {
     /// Tried to create a texture with dimensions which are
     /// greater than the maximum allowed texture size or zero.
-    InvalidTextureSize { width: u32, height: u32 },
+    InvalidTextureSize {
+        /// The requested width.
+        width: u32,
+        /// The requested height.
+        height: u32,
+    },
 }
 
 impl From<NewTextureError> for LoadTextureError {
