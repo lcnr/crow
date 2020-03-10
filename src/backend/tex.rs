@@ -156,20 +156,12 @@ impl RawTexture {
             match gl_error {
                 gl::NO_ERROR => (),
                 gl::OUT_OF_MEMORY => {
-                    let other_error = gl::GetError();
-                    if other_error != gl::NO_ERROR {
-                        bug!(
-                            "gl::RenderbufferStorage: unexpected second error: {}",
-                            other_error
-                        );
-                    }
-
                     // TODO: OpenGl is now in an undefined state,
                     // consider aborting instead, as it is possible
                     // to catch a panic
                     panic!("OpenGl is out of memory and in an invalid state");
                 }
-                e => bug!("gl::RenderbufferStorage: unexpected error: {}", e),
+                e => bug!("unexpected error: {}", e),
             }
 
             // SAFETY:

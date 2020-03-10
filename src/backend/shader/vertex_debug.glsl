@@ -1,7 +1,7 @@
 #version 330
 
 // select (x1, y1, x2, y2)
-in vec4 position;
+layout (location = 0) in vec4 position;
 
 // (x1, y1, x2, y2)
 uniform vec4 start_end;

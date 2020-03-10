@@ -1,5 +1,5 @@
 #version 330
-in vec2 position;
+layout (location = 0) in vec2 position;
 
 out vec2 tex_coords;
 out vec2 source_size;

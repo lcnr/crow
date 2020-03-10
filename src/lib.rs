@@ -428,7 +428,7 @@ impl Context {
 
         let gl_error = gl::GetError();
         if gl_error != gl::NO_ERROR {
-            bug!("Context::unlock_unchecked: unexpected error: {}", gl_error);
+            bug!("unexpected error: {}", gl_error);
         }
 
         INITIALIZED.store(false, Ordering::Release);
