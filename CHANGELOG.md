@@ -2,6 +2,8 @@
 
 ## 0.4.0
 
+- implement actual error types and update function return types.
+- add `fn Offset::into_inner` and `fn Scaled::into_inner`.
 - update image from version `0.22` to `0.23`.
 - remove `fn Texture::clear_depth`, use `Context::clear_depth(&mut texture)` instead.
 - add required trait method `fn DrawTarget::receive_clear_depth`.
