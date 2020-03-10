@@ -297,6 +297,13 @@ impl Context {
     /// Trying to create a texture with a size
     /// greater than `maximum_texture_size` results in an
     /// `InvalidTextureSize` error.
+    ///
+    /// ```rust, no_run
+    /// use crow::{Context, glutin::WindowBuilder};
+    ///
+    /// let mut ctx = Context::new(WindowBuilder::new()).unwrap();
+    /// println!("maximum supported texture size: {:?}", ctx.maximum_texture_size());
+    /// ```
     pub fn maximum_texture_size(&self) -> (u32, u32) {
         self.backend.constants().max_texture_size
     }

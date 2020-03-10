@@ -16,7 +16,6 @@
 ///     ctx.finalize_frame()?;
 ///     Ok(())
 /// }
-///
 /// ```
 #[derive(Debug)]
 pub enum Error {

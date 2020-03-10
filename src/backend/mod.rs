@@ -42,11 +42,14 @@ impl GlConstants {
             }
         }
 
+        // must be at least 1024
         let texture_size = get(gl::MAX_TEXTURE_SIZE, "max_texture_size");
         let renderbuffer_size = get(gl::MAX_RENDERBUFFER_SIZE, "max_renderbuffer_size");
 
         let size = cmp::min(texture_size, renderbuffer_size);
+        // must be at least 16384
         let framebuffer_width = get(gl::MAX_FRAMEBUFFER_WIDTH, "max_framebuffer_width");
+        // must be at least 16384
         let framebuffer_height = get(gl::MAX_FRAMEBUFFER_HEIGHT, "max_framebuffer_height");
 
         GlConstants {
