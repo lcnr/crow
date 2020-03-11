@@ -54,7 +54,7 @@ fn main() -> Result<(), crow::Error> {
 
     let mut frames_to_next = 0;
     loop {
-        ctx.events_loop().poll_events(|event| {
+        ctx.event_loop().poll_events(|event| {
             fin = match event {
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::CloseRequested => true,

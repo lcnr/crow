@@ -57,7 +57,7 @@ fn rectangles(c: &mut Criterion) {
 
     c.bench_function("rectangles", |b| {
         b.iter(|| {
-            ctx.events_loop().poll_events(mem::drop);
+            ctx.event_loop().poll_events(mem::drop);
 
             ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
 

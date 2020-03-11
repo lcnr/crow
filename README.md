@@ -38,7 +38,7 @@ fn main() -> Result<(), crow::Error> {
 
     let mut fin = false;
     loop {
-        ctx.events_loop().poll_events(|event| {
+        ctx.event_loop().poll_events(|event| {
             if let Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..

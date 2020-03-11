@@ -16,7 +16,7 @@
 //!
 //!     let mut fin = false;
 //!     loop {
-//!         ctx.events_loop().poll_events(|event| match event {
+//!         ctx.event_loop().poll_events(|event| match event {
 //!             Event::WindowEvent {
 //!                 event: WindowEvent::CloseRequested,
 //!                 ..
@@ -62,7 +62,10 @@ use std::{
 
 use static_assertions::assert_not_impl_any;
 
-use glutin::{EventsLoop, Window, WindowBuilder};
+use glutin::{
+    event_loop::EventLoop,
+    window::{Window, WindowBuilder},
+};
 
 use image::RgbaImage;
 
@@ -217,7 +220,7 @@ static INITIALIZED: AtomicBool = AtomicBool::new(false);
 ///
 ///     let mut fin = false;
 ///     loop {
-///         ctx.events_loop().poll_events(|event| match event {
+///         ctx.event_loop().poll_events(|event| match event {
 ///             Event::WindowEvent {
 ///                 event: WindowEvent::CloseRequested,
 ///                 ..
@@ -417,14 +420,15 @@ impl Context {
         self.backend.window()
     }
 
-    /// Returns the `EventsLoop` of the used window.
-    pub fn events_loop(&mut self) -> &mut EventsLoop {
-        self.backend.events_loop()
-    }
+    /// Hijacks the calling thread and runs the given `frame` in a loop.
+    ///
+    /// Since the closure is `'static`, it must be a `move` closure if it needs to
+    /// access any data from the calling context.
+    pub fn run<F>(self, frame: F) -> ! {
+        self.backend
+            .run(move |backend: &mut Backend, (event, window_target, control_flow)| {
 
-    /// Presents the current frame to the screen and prepares for the next frame.
-    pub fn finalize_frame(&mut self) -> Result<(), FinalizeError> {
-        self.backend.finalize_frame()
+            })
     }
 
     /// Drops this context while allowing the initialization of a new one afterwards.
@@ -467,11 +471,11 @@ impl DrawTarget for WindowSurface {
         config: &DrawConfig,
     ) {
         let dim = ctx.backend.window_dimensions();
-        let hidpi = ctx.window().get_hidpi_factor().round() as u32;
+        let dpi = ctx.backend.dpi_factor();
         ctx.backend.draw(
             0,
             dim,
-            hidpi,
+            dpi,
             &texture.inner,
             texture.position,
             texture.size,
@@ -496,9 +500,8 @@ impl DrawTarget for WindowSurface {
         color: (f32, f32, f32, f32),
     ) {
         let dim = ctx.backend.window_dimensions();
-        let hidpi = ctx.window().get_hidpi_factor().round() as u32;
-        ctx.backend
-            .debug_draw(false, 0, dim, hidpi, from, to, color)
+        let dpi = ctx.backend.dpi_factor();
+        ctx.backend.debug_draw(false, 0, dim, dpi, from, to, color)
     }
 
     fn receive_rectangle(
@@ -509,9 +512,9 @@ impl DrawTarget for WindowSurface {
         color: (f32, f32, f32, f32),
     ) {
         let dim = ctx.backend.window_dimensions();
-        let hidpi = ctx.window().get_hidpi_factor().round() as u32;
+        let dpi = ctx.backend.dpi_factor();
         ctx.backend
-            .debug_draw(true, 0, dim, hidpi, lower_left, upper_right, color)
+            .debug_draw(true, 0, dim, dpi, lower_left, upper_right, color)
     }
 }
 

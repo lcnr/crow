@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0
+
+- one now has to use the method `run`, which does not terminate.
+- update `glutin` to version `0.23`
+
 ## 0.5.1
 
 - add basic support for HiDPI.

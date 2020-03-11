@@ -35,7 +35,7 @@ fn main() -> Result<(), crow::Error> {
         [[false; (WINDOW_SIZE.1 / CELL_SIZE) as usize]; (WINDOW_SIZE.0 / CELL_SIZE) as usize];
 
     loop {
-        ctx.events_loop().poll_events(|event| {
+        ctx.event_loop().poll_events(|event| {
             if let Event::WindowEvent { event, .. } = event {
                 match event {
                     WindowEvent::CloseRequested => fin = true,

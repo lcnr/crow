@@ -3,7 +3,13 @@ use std::{cmp, convert::TryFrom, ffi::CStr};
 use static_assertions::{assert_type_eq_all, const_assert_eq};
 
 use gl::types::*;
-use glutin::{ContextWrapper, EventsLoop, PossiblyCurrent, Window, WindowBuilder};
+use glutin::{
+    dpi::LogicalSize,
+    event::Event,
+    event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget},
+    window::{Window, WindowBuilder},
+    ContextWrapper, PossiblyCurrent,
+};
 
 use crate::{FinalizeError, NewContextError};
 
@@ -92,20 +98,21 @@ impl GlConstants {
 #[derive(Debug)]
 pub struct Backend {
     state: OpenGlState,
-    events_loop: EventsLoop,
+    event_loop: Option<EventLoop<()>>,
     gl_context: ContextWrapper<PossiblyCurrent, Window>,
     constants: GlConstants,
     program: Program,
     debug_program: DebugProgram,
+    dpi: u32,
 }
 
 impl Backend {
     pub fn initialize(window: WindowBuilder) -> Result<Self, NewContextError> {
-        let events_loop = EventsLoop::new();
+        let event_loop = EventLoop::new();
         let gl_context = glutin::ContextBuilder::new()
             .with_depth_buffer(16)
             .with_vsync(false)
-            .build_windowed(window, &events_loop)
+            .build_windowed(window, &event_loop)
             .map_err(NewContextError::CreationError)?;
 
         // It is essential to make the context current before calling `gl::load_with`.
@@ -115,9 +122,16 @@ impl Backend {
                 .map_err(|(_, e)| NewContextError::ContextError(e))?
         };
 
+        let dpi = gl_context.window().scale_factor();
+        if dpi < 0.5 {
+            bug!("unexpected dpi: {}", dpi);
+        } else if dpi.fract().min(1.0 - dpi.fract()) > std::f64::EPSILON {
+            bug!("fractional HiDPI scaling is not yet supported: {}", dpi);
+        }
+        let dpi = dpi.round() as u32;
+
         // Load the OpenGL function pointers
-        // TODO: `as *const _` will not be needed once glutin is updated to the latest gl version
-        gl::load_with(|symbol| gl_context.get_proc_address(symbol) as *const _);
+        gl::load_with(|symbol| gl_context.get_proc_address(symbol));
 
         unsafe {
             // SAFETY: `gl::BLEND` is a valid capability
@@ -127,32 +141,31 @@ impl Backend {
         let (program, uniforms) = Program::new();
         let (debug_program, debug_uniforms) = DebugProgram::new();
 
+        let window_size: LogicalSize<u32> = gl_context.window().inner_size().to_logical(dpi as f64);
+
         let state = OpenGlState::new(
             uniforms,
             debug_uniforms,
             (program.id, program.vao),
-            gl_context
-                .window()
-                .get_inner_size()
-                .map_or((1024, 720), |s| s.into()),
+            window_size.into(),
         );
 
         let constants = GlConstants::load();
 
         Ok(Self {
             state,
-            events_loop,
+            event_loop: Some(event_loop),
             gl_context,
             constants,
             program,
             debug_program,
+            dpi,
         })
     }
 
     pub fn resize_window(&mut self, width: u32, height: u32) {
-        self.gl_context
-            .window()
-            .set_inner_size(From::from((width, height)))
+        let size: LogicalSize<u32> = From::from((width, height));
+        self.gl_context.window().set_inner_size(size)
     }
 
     pub fn window(&self) -> &Window {
@@ -160,11 +173,12 @@ impl Backend {
     }
 
     pub fn window_dimensions(&self) -> (u32, u32) {
-        if let Some(dimensions) = self.gl_context.window().get_inner_size() {
-            dimensions.into()
-        } else {
-            bug!("failed to get window_dimensions")
-        }
+        let size: LogicalSize<u32> = self
+            .gl_context
+            .window()
+            .inner_size()
+            .to_logical(self.dpi as f64);
+        size.into()
     }
 
     pub fn take_screenshot(&mut self, (width, height): (u32, u32)) -> Vec<u8> {
@@ -272,12 +286,26 @@ impl Backend {
         Ok(())
     }
 
+    pub fn dpi_factor(&self) -> u32 {
+        self.dpi
+    }
+
     pub fn constants(&self) -> &GlConstants {
         &self.constants
     }
 
-    pub fn events_loop(&mut self) -> &mut EventsLoop {
-        &mut self.events_loop
+    pub fn run<F>(mut self, mut event_handler: F) -> !
+    where
+        F: 'static
+            + FnMut(&mut Self, (Event<'_, ()>, &EventLoopWindowTarget<()>, &mut ControlFlow)),
+    {
+        if let Some(event_loop) = self.event_loop.take() {
+            event_loop.run(move |event, window_target, control_flow| {
+                event_handler(&mut self, (event, window_target, control_flow))
+            })
+        } else {
+            bug!("missing event_loop");
+        }
     }
 }
 
