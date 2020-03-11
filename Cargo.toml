@@ -33,7 +33,6 @@ serde1 = ["serde", "glutin/serde"]
 [dev-dependencies]
 rand = "0.7"
 rand_xorshift = "0.2.0"
-criterion = "0.3"
 
 [[test]]
 name = "test"
