@@ -4,9 +4,8 @@ use static_assertions::{assert_type_eq_all, const_assert_eq};
 
 use gl::types::*;
 use glutin::{
-    dpi::LogicalSize,
-    event::Event,
-    event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget},
+    dpi::{LogicalSize, PhysicalSize},
+    event_loop::EventLoop,
     window::{Window, WindowBuilder},
     ContextWrapper, PossiblyCurrent,
 };
@@ -98,7 +97,6 @@ impl GlConstants {
 #[derive(Debug)]
 pub struct Backend {
     state: OpenGlState,
-    event_loop: Option<EventLoop<()>>,
     gl_context: ContextWrapper<PossiblyCurrent, Window>,
     constants: GlConstants,
     program: Program,
@@ -107,12 +105,14 @@ pub struct Backend {
 }
 
 impl Backend {
-    pub fn initialize(window: WindowBuilder) -> Result<Self, NewContextError> {
-        let event_loop = EventLoop::new();
+    pub fn initialize(
+        window: WindowBuilder,
+        event_loop: &EventLoop<()>,
+    ) -> Result<Self, NewContextError> {
         let gl_context = glutin::ContextBuilder::new()
             .with_depth_buffer(16)
             .with_vsync(false)
-            .build_windowed(window, &event_loop)
+            .build_windowed(window, event_loop)
             .map_err(NewContextError::CreationError)?;
 
         // It is essential to make the context current before calling `gl::load_with`.
@@ -141,7 +141,8 @@ impl Backend {
         let (program, uniforms) = Program::new();
         let (debug_program, debug_uniforms) = DebugProgram::new();
 
-        let window_size: LogicalSize<u32> = gl_context.window().inner_size().to_logical(dpi as f64);
+        let window_size: LogicalSize<u32> =
+            gl_context.window().inner_size().to_logical(f64::from(dpi));
 
         let state = OpenGlState::new(
             uniforms,
@@ -154,7 +155,6 @@ impl Backend {
 
         Ok(Self {
             state,
-            event_loop: Some(event_loop),
             gl_context,
             constants,
             program,
@@ -163,9 +163,16 @@ impl Backend {
         })
     }
 
+    pub fn convert_size(&self, size: PhysicalSize<u32>) -> (u32, u32) {
+        let size: LogicalSize<u32> = size.to_logical(f64::from(self.dpi));
+        size.into()
+    }
+
     pub fn resize_window(&mut self, width: u32, height: u32) {
         let size: LogicalSize<u32> = From::from((width, height));
-        self.gl_context.window().set_inner_size(size)
+        self.gl_context.window().set_inner_size(size);
+        self.gl_context
+            .resize(size.to_physical(f64::from(self.dpi)));
     }
 
     pub fn window(&self) -> &Window {
@@ -177,7 +184,7 @@ impl Backend {
             .gl_context
             .window()
             .inner_size()
-            .to_logical(self.dpi as f64);
+            .to_logical(f64::from(self.dpi));
         size.into()
     }
 
@@ -292,20 +299,6 @@ impl Backend {
 
     pub fn constants(&self) -> &GlConstants {
         &self.constants
-    }
-
-    pub fn run<F>(mut self, mut event_handler: F) -> !
-    where
-        F: 'static
-            + FnMut(&mut Self, (Event<'_, ()>, &EventLoopWindowTarget<()>, &mut ControlFlow)),
-    {
-        if let Some(event_loop) = self.event_loop.take() {
-            event_loop.run(move |event, window_target, control_flow| {
-                event_handler(&mut self, (event, window_target, control_flow))
-            })
-        } else {
-            bug!("missing event_loop");
-        }
     }
 }
 
