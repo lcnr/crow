@@ -54,7 +54,7 @@ impl GlConstants {
         // only check the max framebuffer size if the extension
         // `ARB_framebuffer_no_attachments` exists
         unsafe {
-            // TODO: change the constant to `&CStr` one `CStr::from_bytes_with_nul_unchecked` is const
+            // TODO: change the constant to `&CStr` once `CStr::from_bytes_with_nul_unchecked` is const
             let expected_extension =
                 CStr::from_bytes_with_nul(ARB_framebuffer_no_attachments).unwrap();
             for i in 0.. {
