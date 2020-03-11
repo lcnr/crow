@@ -1,22 +1,5 @@
 /// The super type of every error in this crate.
 /// If this is used as a return type, the question mark operator can always be used.
-///
-/// # Examples
-///
-/// ```rust, no_run
-/// use crow::{Context, glutin::WindowBuilder, Texture};
-///
-/// fn main() -> Result<(), crow::Error> {
-///     let mut ctx = Context::new(WindowBuilder::new())?;
-///
-///     let image = Texture::load(&mut ctx, "this/path/does/not/exist.png")?;
-///
-///     ctx.draw(&mut ctx.window_surface(), &image, (0, 0), &Default::default());
-///     
-///     ctx.finalize_frame()?;
-///     Ok(())
-/// }
-/// ```
 #[derive(Debug)]
 pub enum Error {
     /// Tried to create a texture with dimensions which are

@@ -5,25 +5,15 @@ use image::RgbaImage;
 use rand::prelude::*;
 
 use crow::{
-    glutin::WindowBuilder,
+    glutin::{dpi::LogicalSize, window::WindowBuilder},
     target::{Offset, Scaled},
     Context, DrawConfig, Texture,
 };
 
 type TestFn = fn(&mut Context) -> Result<RgbaImage, crow::Error>;
 
-pub fn test(name: &str, f: TestFn) -> Result<(), ()> {
-    let mut ctx = Context::new(
-        WindowBuilder::new()
-            .with_dimensions(From::from((720, 480)))
-            .with_visibility(false),
-    )
-    .unwrap();
-
-    let res = f(&mut ctx);
-    unsafe {
-        ctx.unlock_unchecked();
-    }
+pub fn test(ctx: &mut Context, name: &str, f: TestFn) -> Result<(), ()> {
+    let res = f(ctx);
 
     let actual_image = match res {
         Ok(image) => image,
@@ -251,13 +241,20 @@ impl TestRunner {
     fn run(mut self) -> i32 {
         // randomize test order
         println!("\nrunning {} tests", self.0.len());
+
         self.0.shuffle(&mut rand::thread_rng());
+        let mut ctx = Context::new(
+            WindowBuilder::new()
+                .with_inner_size(LogicalSize::new(720, 480))
+                .with_visible(false),
+        )
+        .unwrap();
 
         let mut success = 0;
         let mut failed = 0;
 
         for (name, f) in self.0 {
-            match test(name, f) {
+            match test(&mut ctx, name, f) {
                 Ok(()) => success += 1,
                 Err(()) => failed += 1,
             }

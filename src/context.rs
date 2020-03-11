@@ -62,7 +62,7 @@ impl Context {
     /// `InvalidTextureSize` error.
     ///
     /// ```rust, no_run
-    /// use crow::{Context, glutin::WindowBuilder};
+    /// use crow::{Context, glutin::window::WindowBuilder};
     ///
     /// let mut ctx = Context::new(WindowBuilder::new()).unwrap();
     /// println!("maximum supported texture size: {:?}", ctx.maximum_texture_size());
@@ -169,12 +169,12 @@ impl Context {
     /// # Examples
     ///
     /// ```no_run
-    /// use crow::{Context, glutin::WindowBuilder};
+    /// use crow::{Context, glutin::window::WindowBuilder};
     ///
-    /// let context = Context::new(WindowBuilder::new().with_title("Starting"))
-    ///     .expect("unable to create a context");
+    /// let context = Context::new(WindowBuilder::new().with_title("Starting"))?;
     ///
     /// context.window().set_title("Running");
+    /// # Ok::<(), crow::Error>(())
     /// ```
     pub fn window(&self) -> &Window {
         self.backend.window()
@@ -201,7 +201,6 @@ impl Context {
                             _window_target: &EventLoopWindowTarget<()>,
                             control_flow: &mut ControlFlow| {
             match event {
-                // TODO: when is redraw requested called, is it better to use main events cleared
                 Event::WindowEvent { event: ref e, .. } => match e {
                     &WindowEvent::Resized(new_size) => {
                         self.backend.update_ctx(new_size);
@@ -210,9 +209,12 @@ impl Context {
                     _ => {
                         if let Some(e) = event.to_static() {
                             events.push(e)
+                        } else {
+                            bug!("event.to_static");
                         }
                     }
                 },
+                Event::MainEventsCleared => self.backend.request_redraw(),
                 Event::RedrawRequested(_) => {
                     let frame_result = application.as_mut().unwrap().frame(
                         &mut self,
@@ -230,6 +232,8 @@ impl Context {
                 _ => {
                     if let Some(e) = event.to_static() {
                         events.push(e)
+                    } else {
+                        bug!("event.to_static");
                     }
                 }
             }

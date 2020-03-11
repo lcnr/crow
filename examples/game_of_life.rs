@@ -4,12 +4,17 @@
 //! to advance a generation press space.
 
 use crow::{
-    glutin::{ElementState, Event, MouseButton, VirtualKeyCode, WindowBuilder, WindowEvent},
+    glutin::{
+        dpi::LogicalSize,
+        event::{ElementState, Event, MouseButton, VirtualKeyCode, WindowEvent},
+        window::WindowBuilder,
+    },
     target::Scaled,
     Context, DrawConfig, Texture,
 };
 
-const WINDOW_SIZE: (u32, u32) = (1080, 720);
+const WINDOW_WIDTH: u32 = 1080;
+const WINDOW_HEIGHT: u32 = 720;
 const CELL_SIZE: u32 = 10;
 
 fn mat((r, g, b): (f32, f32, f32)) -> [[f32; 4]; 4] {
@@ -22,23 +27,22 @@ fn mat((r, g, b): (f32, f32, f32)) -> [[f32; 4]; 4] {
 }
 
 fn main() -> Result<(), crow::Error> {
-    let mut ctx = Context::new(WindowBuilder::new().with_dimensions(From::from(WINDOW_SIZE)))?;
+    let mut ctx = Context::new(
+        WindowBuilder::new().with_inner_size(LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT)),
+    )?;
 
     let mut texture = Texture::new(&mut ctx, (1, 1))?;
     ctx.clear_color(&mut texture, (1.0, 1.0, 1.0, 1.0));
-    let mut surface = Scaled::new(ctx.window_surface(), (CELL_SIZE, CELL_SIZE));
-
-    let mut fin = false;
 
     let mut mouse_position = (0, 0);
     let mut cells =
-        [[false; (WINDOW_SIZE.1 / CELL_SIZE) as usize]; (WINDOW_SIZE.0 / CELL_SIZE) as usize];
+        [[false; (WINDOW_HEIGHT / CELL_SIZE) as usize]; (WINDOW_WIDTH / CELL_SIZE) as usize];
 
-    loop {
-        ctx.event_loop().poll_events(|event| {
+    ctx.run(move |ctx: &mut Context, surface: &mut _, events| {
+        let surface = &mut Scaled::new(surface, (CELL_SIZE, CELL_SIZE));
+        for event in events {
             if let Event::WindowEvent { event, .. } = event {
                 match event {
-                    WindowEvent::CloseRequested => fin = true,
                     WindowEvent::CursorMoved { position, .. } => mouse_position = position.into(),
                     WindowEvent::KeyboardInput { input, .. } => {
                         if input.state == ElementState::Pressed
@@ -66,9 +70,9 @@ fn main() -> Result<(), crow::Error> {
                     _ => (),
                 }
             }
-        });
+        }
 
-        ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
+        ctx.clear_color(surface, (0.4, 0.4, 0.8, 1.0));
 
         for (x, row) in cells.iter().enumerate() {
             for (y, &cell) in row.iter().enumerate() {
@@ -79,7 +83,7 @@ fn main() -> Result<(), crow::Error> {
                     };
 
                     ctx.draw(
-                        &mut surface,
+                        surface,
                         &texture,
                         (x as i32, (row.len() - 1 - y) as i32),
                         &DrawConfig {
@@ -90,19 +94,12 @@ fn main() -> Result<(), crow::Error> {
                 }
             }
         }
-
-        ctx.finalize_frame()?;
-
-        if fin {
-            break;
-        }
-    }
-
-    Ok(())
+        true
+    })
 }
 
 fn alive(
-    cells: &[[bool; (WINDOW_SIZE.1 / CELL_SIZE) as usize]; (WINDOW_SIZE.0 / CELL_SIZE) as usize],
+    cells: &[[bool; (WINDOW_HEIGHT / CELL_SIZE) as usize]; (WINDOW_WIDTH / CELL_SIZE) as usize],
     x: isize,
     y: isize,
 ) -> u8 {
@@ -119,7 +116,7 @@ fn alive(
 }
 
 fn neighbors(
-    cells: &[[bool; (WINDOW_SIZE.1 / CELL_SIZE) as usize]; (WINDOW_SIZE.0 / CELL_SIZE) as usize],
+    cells: &[[bool; (WINDOW_HEIGHT / CELL_SIZE) as usize]; (WINDOW_WIDTH / CELL_SIZE) as usize],
     x: isize,
     y: isize,
 ) -> u8 {
@@ -134,8 +131,7 @@ fn neighbors(
 }
 
 fn step(
-    cells: &mut [[bool; (WINDOW_SIZE.1 / CELL_SIZE) as usize];
-             (WINDOW_SIZE.0 / CELL_SIZE) as usize],
+    cells: &mut [[bool; (WINDOW_HEIGHT / CELL_SIZE) as usize]; (WINDOW_WIDTH / CELL_SIZE) as usize],
 ) {
     let mut diffs = Vec::new();
 

@@ -1,30 +1,26 @@
 //! A simple implementation of chromatic aberration.
 //!
 //! Press space to split and offset the 3 color channels.
-
-use std::{thread, time::Duration};
-
 use crow::{
     color,
-    glutin::{ElementState, Event, VirtualKeyCode, WindowBuilder, WindowEvent},
+    glutin::{
+        event::{ElementState, Event, VirtualKeyCode, WindowEvent},
+        window::WindowBuilder,
+    },
     BlendMode, Context, DrawConfig, Texture,
 };
 
 fn main() -> Result<(), crow::Error> {
     let mut ctx = Context::new(WindowBuilder::new())?;
 
-    let mut surface = ctx.window_surface();
-
     let texture = Texture::load(&mut ctx, "./textures/player.png")?;
     let mut target_texture = Texture::new(&mut ctx, (100, 100))?;
 
-    let mut fin = false;
     let mut offset = 0;
-    loop {
-        ctx.event_loop().poll_events(|event| {
+    ctx.run(move |ctx: &mut Context, surface: &mut _, events| {
+        for event in events {
             if let Event::WindowEvent { event, .. } = event {
                 match event {
-                    WindowEvent::CloseRequested => fin = true,
                     WindowEvent::KeyboardInput { input, .. } => {
                         if input.state == ElementState::Pressed
                             && input.virtual_keycode == Some(VirtualKeyCode::Space)
@@ -39,8 +35,9 @@ fn main() -> Result<(), crow::Error> {
                     _ => (),
                 }
             }
-        });
-        ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
+        }
+
+        ctx.clear_color(surface, (0.3, 0.3, 0.8, 1.0));
         ctx.clear_color(&mut target_texture, (0.0, 0.0, 0.0, 0.0));
 
         ctx.draw(
@@ -75,7 +72,7 @@ fn main() -> Result<(), crow::Error> {
         );
 
         ctx.draw(
-            &mut ctx.window_surface(),
+            surface,
             &target_texture,
             (100, 100),
             &DrawConfig {
@@ -83,14 +80,6 @@ fn main() -> Result<(), crow::Error> {
                 ..Default::default()
             },
         );
-
-        ctx.finalize_frame()?;
-        thread::sleep(Duration::from_millis(1000 / 30));
-
-        if fin {
-            break;
-        }
-    }
-
-    Ok(())
+        true
+    })
 }

@@ -167,6 +167,10 @@ impl Backend {
         self.gl_context.resize(size)
     }
 
+    pub fn request_redraw(&mut self) {
+        self.window().request_redraw()
+    }
+
     pub fn resize_window(&mut self, width: u32, height: u32) {
         let size: LogicalSize<u32> = From::from((width, height));
         self.gl_context.window().set_inner_size(size);

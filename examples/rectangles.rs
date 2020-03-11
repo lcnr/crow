@@ -1,11 +1,7 @@
-use std::{
-    collections::VecDeque,
-    thread,
-    time::{Duration, Instant},
-};
+use std::collections::VecDeque;
 
 use crow::{
-    glutin::{Event, WindowBuilder, WindowEvent},
+    glutin::{dpi::LogicalSize, window::WindowBuilder},
     target::{Offset, Scaled},
     Context, DrawConfig, DrawTarget, Texture,
 };
@@ -24,14 +20,15 @@ pub struct Rectangle {
 fn main() -> Result<(), crow::Error> {
     let mut ctx = Context::new(
         WindowBuilder::new()
-            .with_dimensions(From::from((WINDOW_SIZE.0 * SCALE, WINDOW_SIZE.1 * SCALE)))
+            .with_inner_size(LogicalSize::new(
+                WINDOW_SIZE.0 * SCALE,
+                WINDOW_SIZE.1 * SCALE,
+            ))
             .with_resizable(false),
     )?;
 
     let rectangle_vertical = Texture::load(&mut ctx, "textures/rectangle_vertical.png")?;
     let rectangle_horizontal = Texture::load(&mut ctx, "textures/rectangle_horizontal.png")?;
-
-    let mut surface = Scaled::new(ctx.window_surface(), (SCALE, SCALE));
 
     let mut rng = rand::thread_rng();
 
@@ -49,20 +46,9 @@ fn main() -> Result<(), crow::Error> {
 
     let mut position = 0;
 
-    let mut fin = false;
-    let mut fps_limiter = FrameRateLimiter::new(30);
-
     let mut frames_to_next = 0;
-    loop {
-        ctx.event_loop().poll_events(|event| {
-            fin = match event {
-                Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::CloseRequested => true,
-                    _ => false,
-                },
-                _ => false,
-            }
-        });
+    ctx.run(move |ctx: &mut Context, surface: &mut _, _| {
+        let mut surface = Scaled::new(surface, (SCALE, SCALE));
 
         ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
 
@@ -93,15 +79,11 @@ fn main() -> Result<(), crow::Error> {
             &rectangle_vertical,
             &rectangle_horizontal,
             &mut Offset::new(&mut surface, (position, 0)),
-            &mut ctx,
-        )?;
+            ctx,
+        );
 
-        ctx.finalize_frame()?;
-        if fin {
-            break Ok(());
-        }
-        fps_limiter.frame();
-    }
+        true
+    })
 }
 
 fn mat((r, g, b): (f32, f32, f32)) -> [[f32; 4]; 4] {
@@ -119,7 +101,7 @@ pub fn draw_rectangles(
     horizontal: &Texture,
     surface: &mut impl DrawTarget,
     ctx: &mut Context,
-) -> Result<(), crow::Error> {
+) {
     for rectangle in rectangles.iter() {
         let right_pos = rectangle.position.0 + rectangle.size.0 as i32 - vertical.width() as i32;
         let mut height = rectangle.size.1;
@@ -227,34 +209,5 @@ pub fn draw_rectangles(
                 ..Default::default()
             },
         );
-    }
-
-    Ok(())
-}
-
-pub struct FrameRateLimiter {
-    start: Instant,
-    frame_count: u32,
-    fps: u32,
-}
-
-impl FrameRateLimiter {
-    pub fn new(fps: u32) -> Self {
-        Self {
-            start: Instant::now(),
-            frame_count: 0,
-            fps,
-        }
-    }
-
-    pub fn frame(&mut self) {
-        self.frame_count += 1;
-        if let Some(dur) = (Duration::from_micros(1_000_000 / self.fps as u64) * self.frame_count)
-            .checked_sub(self.start.elapsed())
-        {
-            thread::sleep(dur)
-        } else {
-            println!("LAG at frame {}!", self.frame_count)
-        }
     }
 }
