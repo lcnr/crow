@@ -163,16 +163,13 @@ impl Backend {
         })
     }
 
-    pub fn convert_size(&self, size: PhysicalSize<u32>) -> (u32, u32) {
-        let size: LogicalSize<u32> = size.to_logical(f64::from(self.dpi));
-        size.into()
+    pub fn update_ctx(&mut self, size: PhysicalSize<u32>) {
+        self.gl_context.resize(size)
     }
 
     pub fn resize_window(&mut self, width: u32, height: u32) {
         let size: LogicalSize<u32> = From::from((width, height));
         self.gl_context.window().set_inner_size(size);
-        self.gl_context
-            .resize(size.to_physical(f64::from(self.dpi)));
     }
 
     pub fn window(&self) -> &Window {

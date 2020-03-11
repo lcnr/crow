@@ -51,13 +51,11 @@
     clippy::default_trait_access
 )]
 
-use std::{any, fmt, marker::PhantomData, path::Path, rc::Rc};
+use std::{any, fmt, marker::PhantomData, rc::Rc};
 
 use static_assertions::assert_not_impl_any;
 
-use glutin::event_loop::EventLoop;
-
-use image::RgbaImage;
+use glutin::{event::Event, event_loop::EventLoop};
 
 #[cfg(all(feature = "serde", not(feature = "serde1")))]
 compile_error!("Tried using the feature `serde` directly, consider enabling `serde1` instead");
@@ -77,6 +75,7 @@ macro_rules! bug {
 mod backend;
 mod context;
 mod error;
+mod texture;
 
 pub mod color;
 pub mod target;
@@ -195,11 +194,32 @@ impl<T: DrawTarget> DrawTarget for &mut T {
 pub trait Application {
     /// This function is called once per `frame`,
     /// returning `true` stops the application.
-    fn frame(&mut self, ctx: &mut Context, surface: &mut WindowSurface) -> bool;
+    fn frame(
+        &mut self,
+        ctx: &mut Context,
+        surface: &mut WindowSurface,
+        events: Vec<Event<'static, ()>>,
+    ) -> bool;
 
     /// This function is called after `frame` has returned `true`
     /// and can be used to cleanup ressources.
     fn shutdown(self);
+}
+
+impl<F> Application for F
+where
+    F: FnMut(&mut Context, &mut WindowSurface, Vec<Event<'static, ()>>) -> bool,
+{
+    fn frame(
+        &mut self,
+        ctx: &mut Context,
+        surface: &mut WindowSurface,
+        events: Vec<Event<'static, ()>>,
+    ) -> bool {
+        self(ctx, surface, events)
+    }
+
+    fn shutdown(self) {}
 }
 
 /// A struct storing the global state which is used
@@ -251,73 +271,12 @@ pub struct Context {
 assert_not_impl_any!(Context: Send, Sync, Clone);
 
 /// A handle which can be used to draw to the window.
-///
-/// Created by calling `Context::window_surface()`.
 #[derive(Debug)]
 pub struct WindowSurface {
     _marker: PhantomData<*const ()>,
 }
 
-assert_not_impl_any!(WindowSurface: Send, Sync);
-
-impl DrawTarget for WindowSurface {
-    /// Draws `texture` to the window, to finish the frame, call [`Context::finalize_frame`].
-    ///
-    /// [`Context::finalize_frame`]: struct.Context.html#method.finalize_frame
-    fn receive_draw(
-        &mut self,
-        ctx: &mut Context,
-        texture: &Texture,
-        position: (i32, i32),
-        config: &DrawConfig,
-    ) {
-        let dim = ctx.backend.window_dimensions();
-        let dpi = ctx.backend.dpi_factor();
-        ctx.backend.draw(
-            0,
-            dim,
-            dpi,
-            &texture.inner,
-            texture.position,
-            texture.size,
-            position,
-            config,
-        )
-    }
-
-    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32)) {
-        ctx.backend.clear_color(0, color)
-    }
-
-    fn receive_clear_depth(&mut self, ctx: &mut Context) {
-        ctx.backend.clear_depth(0)
-    }
-
-    fn receive_line(
-        &mut self,
-        ctx: &mut Context,
-        from: (i32, i32),
-        to: (i32, i32),
-        color: (f32, f32, f32, f32),
-    ) {
-        let dim = ctx.backend.window_dimensions();
-        let dpi = ctx.backend.dpi_factor();
-        ctx.backend.debug_draw(false, 0, dim, dpi, from, to, color)
-    }
-
-    fn receive_rectangle(
-        &mut self,
-        ctx: &mut Context,
-        lower_left: (i32, i32),
-        upper_right: (i32, i32),
-        color: (f32, f32, f32, f32),
-    ) {
-        let dim = ctx.backend.window_dimensions();
-        let dpi = ctx.backend.dpi_factor();
-        ctx.backend
-            .debug_draw(true, 0, dim, dpi, lower_left, upper_right, color)
-    }
-}
+assert_not_impl_any!(WindowSurface: Send, Sync, Clone);
 
 /// A two dimensional texture stored in video memory.
 ///
@@ -333,223 +292,6 @@ pub struct Texture {
 }
 
 assert_not_impl_any!(Texture: Send, Sync);
-
-impl Texture {
-    fn from_raw(raw: RawTexture) -> Self {
-        let size = raw.dimensions;
-
-        Texture {
-            inner: Rc::new(raw),
-            position: (0, 0),
-            size,
-        }
-    }
-
-    /// Creates a new texture with the given `dimensions`.
-    ///
-    /// The content of the texture is undefined after its creation.
-    pub fn new(ctx: &mut Context, dimensions: (u32, u32)) -> Result<Self, NewTextureError> {
-        let raw = RawTexture::new(&mut ctx.backend, dimensions)?;
-
-        Ok(Self::from_raw(raw))
-    }
-
-    /// Creates a new texture from the given `image`.
-    pub fn from_image(ctx: &mut Context, image: RgbaImage) -> Result<Self, NewTextureError> {
-        let raw = RawTexture::from_image(&mut ctx.backend, image)?;
-
-        Ok(Self::from_raw(raw))
-    }
-
-    /// Loads a texture from an image located at `path`.
-    pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, LoadTextureError> {
-        let image = image::open(path).map_err(LoadTextureError::ImageError)?;
-
-        let raw = RawTexture::from_image(&mut ctx.backend, image.to_rgba())?;
-
-        Ok(Self::from_raw(raw))
-    }
-
-    /// Returns the part of `self` specified by `position` and `size` as a `Texture`.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if part of the requested section would be outside of the original texture.
-    pub fn get_section(&self, position: (u32, u32), size: (u32, u32)) -> Texture {
-        assert!(
-            position.0 + size.0 <= self.size.0,
-            "invalid section width: {} + {} > {}",
-            position.0,
-            size.0,
-            self.size.0
-        );
-        assert!(
-            position.1 + size.1 <= self.size.1,
-            "invalid section heigth: {} + {} > {}",
-            position.1,
-            size.1,
-            self.size.1
-        );
-
-        Texture {
-            inner: Rc::clone(&self.inner),
-            position: (self.position.0 + position.0, self.position.1 + position.1),
-            size,
-        }
-    }
-
-    /// Returns the dimensions of this texture.
-    pub fn dimensions(&self) -> (u32, u32) {
-        self.size
-    }
-
-    /// Returns the width of this texture.
-    pub fn width(&self) -> u32 {
-        self.size.0
-    }
-
-    /// Returns the height of this texture.
-    pub fn height(&self) -> u32 {
-        self.size.1
-    }
-
-    fn prepare_as_draw_target<'a>(&'a mut self, ctx: &mut Context) -> &'a mut RawTexture {
-        if self.position != (0, 0) || self.size != self.inner.dimensions {
-            let mut inner = RawTexture::new(&mut ctx.backend, self.size).unwrap_bug();
-            inner.add_framebuffer(&mut ctx.backend);
-            ctx.backend.draw(
-                inner.framebuffer_id,
-                self.size,
-                1,
-                &self.inner,
-                self.position,
-                self.size,
-                (0, 0),
-                &DrawConfig::default(),
-            );
-
-            self.inner = Rc::new(inner);
-        } else if let Some(inner) = Rc::get_mut(&mut self.inner) {
-            if !inner.has_framebuffer {
-                inner.add_framebuffer(&mut ctx.backend);
-            }
-        } else {
-            self.inner = Rc::new(RawTexture::clone_as_target(&self.inner, &mut ctx.backend));
-        }
-
-        Rc::get_mut(&mut self.inner).unwrap()
-    }
-
-    /// Stores the current state of this `Texture` in an image.
-    /// This function is fairly slow and should not be used carelessly.
-    pub fn get_image_data(&self, ctx: &mut Context) -> RgbaImage {
-        let _ = ctx;
-
-        let data = ctx.backend.get_image_data(&self.inner);
-
-        let (width, height) = self.inner.dimensions;
-        let skip_above = height - (self.position.1 + self.size.1);
-        let skip_vertical = self.position.0 * 4;
-        let take_vertical = self.size.0 * 4;
-
-        let image_data = data
-            .chunks(width as usize * 4)
-            .skip(skip_above as usize)
-            .rev()
-            .skip(self.position.1 as usize)
-            .flat_map(|row| {
-                row.iter()
-                    .skip(skip_vertical as usize)
-                    .take(take_vertical as usize)
-            })
-            .copied()
-            .collect();
-
-        RgbaImage::from_vec(self.size.0, self.size.1, image_data).unwrap()
-    }
-}
-
-impl DrawTarget for Texture {
-    /// Draws the `texture` onto `self`.
-    /// This permanently alters `self`, in case
-    /// the original is still required,
-    /// consider cloning this `Texture` first.
-    ///
-    /// It is recommended to call [`Context::draw`] instead of
-    /// using this method directly.
-    ///
-    /// [`Context::draw`]: struct.Context.html#method.draw
-    fn receive_draw(
-        &mut self,
-        ctx: &mut Context,
-        texture: &Texture,
-        position: (i32, i32),
-        config: &DrawConfig,
-    ) {
-        let target = self.prepare_as_draw_target(ctx);
-
-        ctx.backend.draw(
-            target.framebuffer_id,
-            target.dimensions,
-            1,
-            &texture.inner,
-            texture.position,
-            texture.size,
-            position,
-            config,
-        )
-    }
-
-    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32)) {
-        let target = self.prepare_as_draw_target(ctx);
-        ctx.backend.clear_color(target.framebuffer_id, color)
-    }
-
-    fn receive_clear_depth(&mut self, ctx: &mut Context) {
-        let target = self.prepare_as_draw_target(ctx);
-        ctx.backend.clear_depth(target.framebuffer_id)
-    }
-
-    fn receive_line(
-        &mut self,
-        ctx: &mut Context,
-        from: (i32, i32),
-        to: (i32, i32),
-        color: (f32, f32, f32, f32),
-    ) {
-        let target = self.prepare_as_draw_target(ctx);
-
-        ctx.backend.debug_draw(
-            false,
-            target.framebuffer_id,
-            target.dimensions,
-            1,
-            from,
-            to,
-            color,
-        )
-    }
-
-    fn receive_rectangle(
-        &mut self,
-        ctx: &mut Context,
-        lower_left: (i32, i32),
-        upper_right: (i32, i32),
-        color: (f32, f32, f32, f32),
-    ) {
-        let target = self.prepare_as_draw_target(ctx);
-
-        ctx.backend.debug_draw(
-            true,
-            target.framebuffer_id,
-            target.dimensions,
-            1,
-            lower_left,
-            upper_right,
-            color,
-        )
-    }
-}
 
 /// Used in `DrawConfig` to specify how
 /// each pixel should be draw onto the target.

@@ -1,5 +1,6 @@
 use std::{
     marker::PhantomData,
+    mem,
     sync::atomic::{AtomicBool, Ordering},
 };
 
@@ -192,32 +193,107 @@ impl Context {
         let mut surface = WindowSurface {
             _marker: PhantomData,
         };
+        // TODO: replace with a custom struct and filter the incoming events,
+        // cmp akari::input::InputState.
+        let mut events = Vec::new();
 
         let closure = move |event: Event<()>,
                             _window_target: &EventLoopWindowTarget<()>,
                             control_flow: &mut ControlFlow| {
             match event {
                 // TODO: when is redraw requested called, is it better to use main events cleared
-                Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::Resized(new_size) => {
-                        let (width, height) = self.backend.convert_size(new_size);
-                        self.backend.resize_window(width, height);
+                Event::WindowEvent { event: ref e, .. } => match e {
+                    &WindowEvent::Resized(new_size) => {
+                        self.backend.update_ctx(new_size);
                     }
-                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                    _ => (),
+                    &WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    _ => {
+                        if let Some(e) = event.to_static() {
+                            events.push(e)
+                        }
+                    }
                 },
                 Event::RedrawRequested(_) => {
-                    if !application.as_mut().unwrap().frame(&mut self, &mut surface) {
+                    let frame_result = application.as_mut().unwrap().frame(
+                        &mut self,
+                        &mut surface,
+                        mem::take(&mut events),
+                    );
+
+                    if !frame_result {
                         *control_flow = ControlFlow::Exit;
                     } else {
                         self.backend.finalize_frame().unwrap_bug();
                     }
                 }
                 Event::LoopDestroyed => application.take().unwrap().shutdown(),
-                _ => (),
+                _ => {
+                    if let Some(e) = event.to_static() {
+                        events.push(e)
+                    }
+                }
             }
         };
 
         event_loop.run(closure)
+    }
+}
+
+impl DrawTarget for WindowSurface {
+    /// Draws `texture` to the window, to finish the frame, call [`Context::finalize_frame`].
+    ///
+    /// [`Context::finalize_frame`]: struct.Context.html#method.finalize_frame
+    fn receive_draw(
+        &mut self,
+        ctx: &mut Context,
+        texture: &Texture,
+        position: (i32, i32),
+        config: &DrawConfig,
+    ) {
+        let dim = ctx.backend.window_dimensions();
+        let dpi = ctx.backend.dpi_factor();
+        ctx.backend.draw(
+            0,
+            dim,
+            dpi,
+            &texture.inner,
+            texture.position,
+            texture.size,
+            position,
+            config,
+        )
+    }
+
+    fn receive_clear_color(&mut self, ctx: &mut Context, color: (f32, f32, f32, f32)) {
+        ctx.backend.clear_color(0, color)
+    }
+
+    fn receive_clear_depth(&mut self, ctx: &mut Context) {
+        ctx.backend.clear_depth(0)
+    }
+
+    fn receive_line(
+        &mut self,
+        ctx: &mut Context,
+        from: (i32, i32),
+        to: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) {
+        let dim = ctx.backend.window_dimensions();
+        let dpi = ctx.backend.dpi_factor();
+        ctx.backend.debug_draw(false, 0, dim, dpi, from, to, color)
+    }
+
+    fn receive_rectangle(
+        &mut self,
+        ctx: &mut Context,
+        lower_left: (i32, i32),
+        upper_right: (i32, i32),
+        color: (f32, f32, f32, f32),
+    ) {
+        let dim = ctx.backend.window_dimensions();
+        let dpi = ctx.backend.dpi_factor();
+        ctx.backend
+            .debug_draw(true, 0, dim, dpi, lower_left, upper_right, color)
     }
 }
