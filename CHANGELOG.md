@@ -3,6 +3,7 @@
 ## 0.5.0
 
 - change `fn Context::new` to not require an `EventsLoop` as an argument.
+- fix bug for OpenGL version not supporting `ARB_framebuffer_no_attachments`.
 
 ## 0.4.0
 
@@ -14,7 +15,7 @@
 - add `fn Context::clear_depth`.
 - add `fn Context::maximum_texture_size`
 - update error type of `fn Texture::new`.
-- reduce the requires OpenGL version to **3.2**.
+- reduce the required OpenGL version to **3.2**.
 
 ## 0.3.2
 
