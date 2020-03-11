@@ -219,6 +219,7 @@ impl RawTexture {
         backend.draw(
             clone.framebuffer_id,
             previous.dimensions,
+            1,
             previous,
             (0, 0),
             previous.dimensions,

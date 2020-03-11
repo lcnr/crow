@@ -467,9 +467,11 @@ impl DrawTarget for WindowSurface {
         config: &DrawConfig,
     ) {
         let dim = ctx.backend.window_dimensions();
+        let hidpi = ctx.window().get_hidpi_factor().round() as u32;
         ctx.backend.draw(
             0,
             dim,
+            hidpi,
             &texture.inner,
             texture.position,
             texture.size,
@@ -494,7 +496,9 @@ impl DrawTarget for WindowSurface {
         color: (f32, f32, f32, f32),
     ) {
         let dim = ctx.backend.window_dimensions();
-        ctx.backend.debug_draw(false, 0, dim, from, to, color)
+        let hidpi = ctx.window().get_hidpi_factor().round() as u32;
+        ctx.backend
+            .debug_draw(false, 0, dim, hidpi, from, to, color)
     }
 
     fn receive_rectangle(
@@ -505,8 +509,9 @@ impl DrawTarget for WindowSurface {
         color: (f32, f32, f32, f32),
     ) {
         let dim = ctx.backend.window_dimensions();
+        let hidpi = ctx.window().get_hidpi_factor().round() as u32;
         ctx.backend
-            .debug_draw(true, 0, dim, lower_left, upper_right, color)
+            .debug_draw(true, 0, dim, hidpi, lower_left, upper_right, color)
     }
 }
 
@@ -611,6 +616,7 @@ impl Texture {
             ctx.backend.draw(
                 inner.framebuffer_id,
                 self.size,
+                1,
                 &self.inner,
                 self.position,
                 self.size,
@@ -681,6 +687,7 @@ impl DrawTarget for Texture {
         ctx.backend.draw(
             target.framebuffer_id,
             target.dimensions,
+            1,
             &texture.inner,
             texture.position,
             texture.size,
@@ -712,6 +719,7 @@ impl DrawTarget for Texture {
             false,
             target.framebuffer_id,
             target.dimensions,
+            1,
             from,
             to,
             color,
@@ -731,6 +739,7 @@ impl DrawTarget for Texture {
             true,
             target.framebuffer_id,
             target.dimensions,
+            1,
             lower_left,
             upper_right,
             color,

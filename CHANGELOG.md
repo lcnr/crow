@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- add basic support for HiDPI.
+
 ## 0.5.0
 
 - change `fn Context::new` to not require an `EventsLoop` as an argument.

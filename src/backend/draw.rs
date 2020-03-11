@@ -11,6 +11,7 @@ impl Backend {
         &mut self,
         target_framebuffer: GLuint,
         target_dimensions: (u32, u32),
+        hidpi: u32,
         source_texture: &RawTexture,
         source_texture_offset: (u32, u32),
         source_dimensions: (u32, u32),
@@ -27,7 +28,8 @@ impl Backend {
 
         s.update_color_modulation(draw_config.color_modulation);
         s.update_target_dimensions(target_dimensions);
-        s.update_viewport_dimensions(target_dimensions);
+        let viewport_dimensions = (target_dimensions.0 * hidpi, target_dimensions.1 * hidpi);
+        s.update_viewport_dimensions(viewport_dimensions);
         s.update_source_scale(draw_config.scale);
         s.update_source_texture_dimensions(source_texture.dimensions);
         s.update_source_texture_offset(source_texture_offset);
@@ -46,11 +48,13 @@ impl Backend {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn debug_draw(
         &mut self,
         rectangle: bool,
         target_framebuffer: GLuint,
         target_dimensions: (u32, u32),
+        hidpi: u32,
         from: (i32, i32),
         to: (i32, i32),
         color: (f32, f32, f32, f32),
@@ -59,7 +63,8 @@ impl Backend {
         s.update_program(self.debug_program.id);
         s.update_vao(self.debug_program.vao[rectangle as usize]);
         s.update_framebuffer(target_framebuffer);
-        s.update_viewport_dimensions(target_dimensions);
+        let viewport_dimensions = (target_dimensions.0 * hidpi, target_dimensions.1 * hidpi);
+        s.update_viewport_dimensions(viewport_dimensions);
         s.disable_depth();
         s.update_debug_color(color);
         let data = (
