@@ -38,11 +38,3 @@ criterion = "0.3"
 [[test]]
 name = "test"
 harness = false
-
-[[bench]]
-name = "debug_lines"
-harness = false
-
-[[bench]]
-name = "rectangles"
-harness = false
