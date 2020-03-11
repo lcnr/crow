@@ -64,7 +64,6 @@ impl GlConstants {
                     gl::NO_ERROR => {
                         let extension = CStr::from_ptr(extension.cast());
                         if expected_extension == extension {
-                            eprintln!("EXTENSION FOUND");
                             let framebuffer_width =
                                 get(gl::MAX_FRAMEBUFFER_WIDTH, "framebuffer_width");
                             let framebuffer_height =
@@ -84,7 +83,6 @@ impl GlConstants {
             }
         }
 
-        eprintln!("EXTENSION NOT FOUND");
         GlConstants {
             max_texture_size: (size, size),
         }
@@ -139,7 +137,7 @@ impl Backend {
                 .map_or((1024, 720), |s| s.into()),
         );
 
-        let constants = dbg!(GlConstants::load());
+        let constants = GlConstants::load();
 
         Ok(Self {
             state,
