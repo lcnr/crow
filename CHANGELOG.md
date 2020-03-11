@@ -2,8 +2,10 @@
 
 ## 0.6.0
 
-- one now has to use the method `run`, which does not terminate.
-- update `glutin` to version `0.23`
+- add `fn Context::framerate` and `fn Context::set_framerate`.
+- add logging using the `log` crate.
+- one now has to use `fn Context::run`, which does not terminate.
+- update `glutin` to version `0.24`
 
 ## 0.5.1
 

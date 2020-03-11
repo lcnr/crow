@@ -5,7 +5,7 @@ use std::{
 };
 
 use glutin::{
-    event::{Event, WindowEvent},
+    event::{Event, StartCause, WindowEvent},
     event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget},
     window::{Window, WindowBuilder},
 };
@@ -13,8 +13,8 @@ use glutin::{
 use image::RgbaImage;
 
 use crate::{
-    backend::Backend, Application, Context, DrawConfig, DrawTarget, NewContextError, Texture,
-    UnwrapBug, WindowSurface,
+    backend::Backend, time::Time, Application, Context, DrawConfig, DrawTarget, NewContextError,
+    Texture, UnwrapBug, WindowSurface,
 };
 
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
@@ -22,6 +22,9 @@ static INITIALIZED: AtomicBool = AtomicBool::new(false);
 impl Context {
     /// Creates a new `Context`. It is not possible to have more
     /// than one `Context` in a program.
+    ///
+    /// The default framerate is 60 frames per second, this can be changed
+    /// using `Context::set_fps`.
     pub fn new(window: WindowBuilder) -> Result<Self, NewContextError> {
         if INITIALIZED.compare_and_swap(false, true, Ordering::AcqRel) {
             panic!("Tried to initialize a second Context");
@@ -32,6 +35,7 @@ impl Context {
         Ok(Self {
             backend,
             event_loop: Some(event_loop),
+            time: Time::new(60),
         })
     }
 
@@ -69,6 +73,20 @@ impl Context {
     /// ```
     pub fn maximum_texture_size(&self) -> (u32, u32) {
         self.backend.constants().max_texture_size
+    }
+
+    /// Returns the framerate of this context.
+    ///
+    /// A framerate of `0` means that the framerate is not restricted.
+    pub fn framerate(&self) -> u32 {
+        self.time.framerate()
+    }
+
+    /// Sets the desired framerate of this context.
+    ///
+    /// An unlimited framerate can be achieved by setting `fps` to `0`.
+    pub fn set_framerate(&mut self, fps: u32) {
+        self.time = Time::new(fps);
     }
 
     /// Draws the `source` onto `target`.
@@ -193,6 +211,7 @@ impl Context {
         let mut surface = WindowSurface {
             _marker: PhantomData,
         };
+
         // TODO: replace with a custom struct and filter the incoming events,
         // cmp akari::input::InputState.
         let mut events = Vec::new();
@@ -201,11 +220,14 @@ impl Context {
                             _window_target: &EventLoopWindowTarget<()>,
                             control_flow: &mut ControlFlow| {
             match event {
-                Event::WindowEvent { event: ref e, .. } => match e {
-                    &WindowEvent::Resized(new_size) => {
+                Event::NewEvents(StartCause::Init) => {
+                    self.time.restart();
+                }
+                Event::WindowEvent { event: ref e, .. } => match *e {
+                    WindowEvent::Resized(new_size) => {
                         self.backend.update_ctx(new_size);
                     }
-                    &WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
                     _ => {
                         if let Some(e) = event.to_static() {
                             events.push(e)
@@ -227,6 +249,10 @@ impl Context {
                     } else {
                         self.backend.finalize_frame().unwrap_bug();
                     }
+                }
+                Event::RedrawEventsCleared => {
+                    // FIXME: there might be a better way then sleeping inside the event loop.
+                    self.time.frame()
                 }
                 Event::LoopDestroyed => application.take().unwrap().shutdown(),
                 _ => {

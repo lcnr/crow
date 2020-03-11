@@ -4,7 +4,7 @@
 use crow::{
     color,
     glutin::{
-        event::{ElementState, Event, VirtualKeyCode, WindowEvent},
+        event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
         window::WindowBuilder,
     },
     BlendMode, Context, DrawConfig, Texture,
@@ -19,20 +19,24 @@ fn main() -> Result<(), crow::Error> {
     let mut offset = 0;
     ctx.run(move |ctx: &mut Context, surface: &mut _, events| {
         for event in events {
-            if let Event::WindowEvent { event, .. } = event {
-                match event {
-                    WindowEvent::KeyboardInput { input, .. } => {
-                        if input.state == ElementState::Pressed
-                            && input.virtual_keycode == Some(VirtualKeyCode::Space)
-                        {
-                            offset = 1;
-                        } else if input.state == ElementState::Released
-                            && input.virtual_keycode == Some(VirtualKeyCode::Space)
-                        {
-                            offset = 0;
-                        }
-                    }
-                    _ => (),
+            if let Event::WindowEvent {
+                event:
+                    WindowEvent::KeyboardInput {
+                        input:
+                            KeyboardInput {
+                                state,
+                                virtual_keycode: Some(VirtualKeyCode::Space),
+                                ..
+                            },
+                        ..
+                    },
+                ..
+            } = event
+            {
+                if state == ElementState::Pressed {
+                    offset = 1;
+                } else {
+                    offset = 0;
                 }
             }
         }

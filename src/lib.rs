@@ -31,6 +31,9 @@
     clippy::default_trait_access
 )]
 
+#[macro_use]
+extern crate log;
+
 use std::{any, fmt, marker::PhantomData, rc::Rc};
 
 use static_assertions::assert_not_impl_any;
@@ -56,6 +59,7 @@ mod backend;
 mod context;
 mod error;
 mod texture;
+mod time;
 
 pub mod color;
 pub mod target;
@@ -65,6 +69,7 @@ pub use glutin;
 pub use image;
 
 use backend::{tex::RawTexture, Backend};
+use time::Time;
 
 trait UnwrapBug<T> {
     fn unwrap_bug(self) -> T;
@@ -226,6 +231,7 @@ where
 pub struct Context {
     backend: Backend,
     event_loop: Option<EventLoop<()>>,
+    time: Time,
 }
 
 assert_not_impl_any!(Context: Send, Sync, Clone);

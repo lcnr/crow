@@ -16,8 +16,9 @@ features = ["serde1"]
 
 [dependencies]
 gl = "0.14"
-glutin = "0.23.0"
+glutin = "0.24.0"
 image = "0.23"
+log = "0.4"
 
 static_assertions = "1"
 
@@ -33,6 +34,7 @@ serde1 = ["serde", "glutin/serde"]
 [dev-dependencies]
 rand = "0.7"
 rand_xorshift = "0.2.0"
+pretty_env_logger = "0.4"
 
 [[test]]
 name = "test"

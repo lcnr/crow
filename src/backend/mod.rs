@@ -52,7 +52,9 @@ impl GlConstants {
 
         // must be at least 1024
         let texture_size = get(gl::MAX_TEXTURE_SIZE, "texture_size");
+        trace!("MAX_TEXTURE_SIZE: {}", texture_size);
         let renderbuffer_size = get(gl::MAX_RENDERBUFFER_SIZE, "renderbuffer_size");
+        trace!("MAX_RENDERBUFFER_SIZE: {}", renderbuffer_size);
         let size = cmp::min(texture_size, renderbuffer_size);
 
         // FIXES https://github.com/lcnr/crow/issues/15
@@ -73,6 +75,11 @@ impl GlConstants {
                                 get(gl::MAX_FRAMEBUFFER_WIDTH, "framebuffer_width");
                             let framebuffer_height =
                                 get(gl::MAX_FRAMEBUFFER_HEIGHT, "framebuffer_height");
+                            trace!(
+                                "MAX_FRAMBUFFER_SIZE: {}x{}",
+                                framebuffer_width,
+                                framebuffer_height
+                            );
 
                             return GlConstants {
                                 max_texture_size: (
@@ -129,6 +136,7 @@ impl Backend {
             bug!("fractional HiDPI scaling is not yet supported: {}", dpi);
         }
         let dpi = dpi.round() as u32;
+        trace!("Calculated DPI: {}", dpi);
 
         // Load the OpenGL function pointers
         gl::load_with(|symbol| gl_context.get_proc_address(symbol));
@@ -143,15 +151,21 @@ impl Backend {
 
         let window_size: LogicalSize<u32> =
             gl_context.window().inner_size().to_logical(f64::from(dpi));
+        let window_size: (u32, u32) = window_size.into();
+        trace!("Logical window size: {}x{}", window_size.0, window_size.1);
 
         let state = OpenGlState::new(
             uniforms,
             debug_uniforms,
             (program.id, program.vao),
-            window_size.into(),
+            window_size,
         );
 
         let constants = GlConstants::load();
+        info!(
+            "Maximum supported texture size: {}x{}",
+            constants.max_texture_size.0, constants.max_texture_size.1
+        );
 
         Ok(Self {
             state,
