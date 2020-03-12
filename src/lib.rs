@@ -38,7 +38,6 @@ use std::{any, fmt, marker::PhantomData, rc::Rc};
 
 use static_assertions::assert_not_impl_any;
 
-
 #[cfg(all(feature = "serde", not(feature = "serde1")))]
 compile_error!("Tried using the feature `serde` directly, consider enabling `serde1` instead");
 
@@ -195,6 +194,7 @@ impl<T: DrawTarget> DrawTarget for &mut T {
 #[derive(Debug)]
 pub struct Context {
     backend: Backend,
+    surface: Option<WindowSurface>,
 }
 
 assert_not_impl_any!(Context: Send, Sync, Clone);
@@ -284,7 +284,7 @@ pub struct DrawConfig {
     pub invert_color: bool,
     /// How the texture should be drawn on the target.
     pub blend_mode: BlendMode,
-    // `#[non_exhaustive]` forbids FRU, so we use a hidden field instead,
+    // `#[non_exhaustive]` forbids FRU, so we use a hidden field instead.
     #[doc(hidden)]
     pub __non_exhaustive: (),
 }

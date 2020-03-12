@@ -4,7 +4,7 @@ use static_assertions::{assert_type_eq_all, const_assert_eq};
 
 use gl::types::*;
 use glutin::{
-    dpi::{LogicalSize},
+    dpi::LogicalSize,
     event_loop::EventLoop,
     window::{Window, WindowBuilder},
     ContextWrapper, PossiblyCurrent,

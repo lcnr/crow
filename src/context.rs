@@ -1,4 +1,5 @@
 use std::{
+    marker::PhantomData,
     mem,
     sync::atomic::{AtomicBool, Ordering},
 };
@@ -34,7 +35,10 @@ impl Context {
         }
 
         let backend = Backend::initialize(window, &event_loop)?;
-        Ok(Self { backend })
+        let surface = Some(WindowSurface {
+            _marker: PhantomData,
+        });
+        Ok(Self { backend, surface })
     }
 
     /// Returns the dimensions of the used window.
@@ -182,8 +186,22 @@ impl Context {
         self.backend.window()
     }
 
-    /// Presents the current frame to the screen and prepares for the next frame.
-    pub fn finalize_frame(&mut self) -> Result<(), FinalizeError> {
+    /// Returns a handle to the window surface.
+    ///
+    /// This handle implements `DrawTarget` and can be used to draw to the window.
+    ///
+    /// Use `fn Context::present` to actually display the resulting image.
+    pub fn surface(&mut self) -> WindowSurface {
+        if let Some(surface) = self.surface.take() {
+            surface
+        } else {
+            panic!("Called `Context::surface` while the previous surface is still in use");
+        }
+    }
+
+    /// Presents the current frame to the screen.
+    pub fn present(&mut self, surface: WindowSurface) -> Result<(), FinalizeError> {
+        self.surface = Some(surface);
         self.backend.finalize_frame()
     }
 
