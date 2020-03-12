@@ -38,7 +38,6 @@ use std::{any, fmt, marker::PhantomData, rc::Rc};
 
 use static_assertions::assert_not_impl_any;
 
-use glutin::{event::Event, event_loop::EventLoop};
 
 #[cfg(all(feature = "serde", not(feature = "serde1")))]
 compile_error!("Tried using the feature `serde` directly, consider enabling `serde1` instead");
@@ -59,7 +58,6 @@ mod backend;
 mod context;
 mod error;
 mod texture;
-mod time;
 
 pub mod color;
 pub mod target;
@@ -69,7 +67,6 @@ pub use glutin;
 pub use image;
 
 use backend::{tex::RawTexture, Backend};
-use time::Time;
 
 trait UnwrapBug<T> {
     fn unwrap_bug(self) -> T;
@@ -175,38 +172,6 @@ impl<T: DrawTarget> DrawTarget for &mut T {
     }
 }
 
-/// This is the core trait of this library.
-pub trait Application {
-    /// This function is called once per `frame`,
-    /// returning `true` stops the application.
-    fn frame(
-        &mut self,
-        ctx: &mut Context,
-        surface: &mut WindowSurface,
-        events: Vec<Event<'static, ()>>,
-    ) -> bool;
-
-    /// This function is called after `frame` has returned `true`
-    /// and can be used to cleanup ressources.
-    fn shutdown(self);
-}
-
-impl<F> Application for F
-where
-    F: FnMut(&mut Context, &mut WindowSurface, Vec<Event<'static, ()>>) -> bool,
-{
-    fn frame(
-        &mut self,
-        ctx: &mut Context,
-        surface: &mut WindowSurface,
-        events: Vec<Event<'static, ()>>,
-    ) -> bool {
-        self(ctx, surface, events)
-    }
-
-    fn shutdown(self) {}
-}
-
 /// A struct storing the global state which is used
 /// for all operations which require access to the GPU.
 ///
@@ -230,8 +195,6 @@ where
 #[derive(Debug)]
 pub struct Context {
     backend: Backend,
-    event_loop: Option<EventLoop<()>>,
-    time: Time,
 }
 
 assert_not_impl_any!(Context: Send, Sync, Clone);

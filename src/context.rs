@@ -1,20 +1,18 @@
 use std::{
-    marker::PhantomData,
     mem,
     sync::atomic::{AtomicBool, Ordering},
 };
 
 use glutin::{
-    event::{Event, StartCause, WindowEvent},
-    event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget},
+    event_loop::EventLoop,
     window::{Window, WindowBuilder},
 };
 
 use image::RgbaImage;
 
 use crate::{
-    backend::Backend, time::Time, Application, Context, DrawConfig, DrawTarget, NewContextError,
-    Texture, UnwrapBug, WindowSurface,
+    backend::Backend, Context, DrawConfig, DrawTarget, FinalizeError, NewContextError, Texture,
+    WindowSurface,
 };
 
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
@@ -23,20 +21,20 @@ impl Context {
     /// Creates a new `Context`. It is not possible to have more
     /// than one `Context` in a program.
     ///
-    /// The default framerate is 60 frames per second, this can be changed
-    /// using `Context::set_fps`.
-    pub fn new(window: WindowBuilder) -> Result<Self, NewContextError> {
+    /// To create a new `Context` after a previous context was used,
+    /// The previous context has to be dropped using the method
+    /// `Context::unlock_unchecked()`. This is a workaround and
+    /// will probably be fixed in a future release.
+    pub fn new<T>(
+        window: WindowBuilder,
+        event_loop: &EventLoop<T>,
+    ) -> Result<Self, NewContextError> {
         if INITIALIZED.compare_and_swap(false, true, Ordering::AcqRel) {
             panic!("Tried to initialize a second Context");
         }
 
-        let event_loop = EventLoop::new();
         let backend = Backend::initialize(window, &event_loop)?;
-        Ok(Self {
-            backend,
-            event_loop: Some(event_loop),
-            time: Time::new(60),
-        })
+        Ok(Self { backend })
     }
 
     /// Returns the dimensions of the used window.
@@ -73,20 +71,6 @@ impl Context {
     /// ```
     pub fn maximum_texture_size(&self) -> (u32, u32) {
         self.backend.constants().max_texture_size
-    }
-
-    /// Returns the framerate of this context.
-    ///
-    /// A framerate of `0` means that the framerate is not restricted.
-    pub fn framerate(&self) -> u32 {
-        self.time.framerate()
-    }
-
-    /// Sets the desired framerate of this context.
-    ///
-    /// An unlimited framerate can be achieved by setting `fps` to `0`.
-    pub fn set_framerate(&mut self, fps: u32) {
-        self.time = Time::new(fps);
     }
 
     /// Draws the `source` onto `target`.
@@ -198,74 +182,26 @@ impl Context {
         self.backend.window()
     }
 
-    /// Hijacks the calling thread and runs the given `frame` in a loop.
+    /// Presents the current frame to the screen and prepares for the next frame.
+    pub fn finalize_frame(&mut self) -> Result<(), FinalizeError> {
+        self.backend.finalize_frame()
+    }
+
+    /// Drops this context while allowing the initialization of a new one afterwards.
     ///
-    /// Since the closure is `'static`, it must be a `move` closure if it needs to
-    /// access any data from the calling context.
-    pub fn run<T>(mut self, application: T) -> !
-    where
-        T: Application + 'static,
-    {
-        let mut application = Some(application);
-        let event_loop = self.event_loop.take().unwrap();
-        let mut surface = WindowSurface {
-            _marker: PhantomData,
-        };
+    /// # Safety
+    ///
+    /// This method may lead to undefined behavior if a struct, for example a `Texture`, which was created using
+    /// the current context, is used with the new context.
+    pub unsafe fn unlock_unchecked(self) {
+        mem::drop(self);
 
-        // TODO: replace with a custom struct and filter the incoming events,
-        // cmp akari::input::InputState.
-        let mut events = Vec::new();
+        let gl_error = gl::GetError();
+        if gl_error != gl::NO_ERROR {
+            bug!("unexpected error: {}", gl_error);
+        }
 
-        let closure = move |event: Event<()>,
-                            _window_target: &EventLoopWindowTarget<()>,
-                            control_flow: &mut ControlFlow| {
-            match event {
-                Event::NewEvents(StartCause::Init) => {
-                    self.time.restart();
-                }
-                Event::WindowEvent { event: ref e, .. } => match *e {
-                    WindowEvent::Resized(new_size) => {
-                        self.backend.update_ctx(new_size);
-                    }
-                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                    _ => {
-                        if let Some(e) = event.to_static() {
-                            events.push(e)
-                        } else {
-                            bug!("event.to_static");
-                        }
-                    }
-                },
-                Event::MainEventsCleared => self.backend.request_redraw(),
-                Event::RedrawRequested(_) => {
-                    let frame_result = application.as_mut().unwrap().frame(
-                        &mut self,
-                        &mut surface,
-                        mem::take(&mut events),
-                    );
-
-                    if !frame_result {
-                        *control_flow = ControlFlow::Exit;
-                    } else {
-                        self.backend.finalize_frame().unwrap_bug();
-                    }
-                }
-                Event::RedrawEventsCleared => {
-                    // FIXME: there might be a better way then sleeping inside the event loop.
-                    self.time.frame()
-                }
-                Event::LoopDestroyed => application.take().unwrap().shutdown(),
-                _ => {
-                    if let Some(e) = event.to_static() {
-                        events.push(e)
-                    } else {
-                        bug!("event.to_static");
-                    }
-                }
-            }
-        };
-
-        event_loop.run(closure)
+        INITIALIZED.store(false, Ordering::Release);
     }
 }
 

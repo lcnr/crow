@@ -4,7 +4,7 @@ use static_assertions::{assert_type_eq_all, const_assert_eq};
 
 use gl::types::*;
 use glutin::{
-    dpi::{LogicalSize, PhysicalSize},
+    dpi::{LogicalSize},
     event_loop::EventLoop,
     window::{Window, WindowBuilder},
     ContextWrapper, PossiblyCurrent,
@@ -112,9 +112,9 @@ pub struct Backend {
 }
 
 impl Backend {
-    pub fn initialize(
+    pub fn initialize<T>(
         window: WindowBuilder,
-        event_loop: &EventLoop<()>,
+        event_loop: &EventLoop<T>,
     ) -> Result<Self, NewContextError> {
         let gl_context = glutin::ContextBuilder::new()
             .with_depth_buffer(16)
@@ -175,14 +175,6 @@ impl Backend {
             debug_program,
             dpi,
         })
-    }
-
-    pub fn update_ctx(&mut self, size: PhysicalSize<u32>) {
-        self.gl_context.resize(size)
-    }
-
-    pub fn request_redraw(&mut self) {
-        self.window().request_redraw()
     }
 
     pub fn resize_window(&mut self, width: u32, height: u32) {
