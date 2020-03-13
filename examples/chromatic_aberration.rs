@@ -5,21 +5,27 @@ use crow::{
     color,
     glutin::{
         event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
         window::WindowBuilder,
     },
     BlendMode, Context, DrawConfig, Texture,
 };
 
 fn main() -> Result<(), crow::Error> {
-    let mut ctx = Context::new(WindowBuilder::new())?;
+    let event_loop = EventLoop::new();
+    let mut ctx = Context::new(WindowBuilder::new(), &event_loop)?;
 
     let texture = Texture::load(&mut ctx, "./textures/player.png")?;
     let mut target_texture = Texture::new(&mut ctx, (100, 100))?;
 
     let mut offset = 0;
-    ctx.run(move |ctx: &mut Context, surface: &mut _, events| {
-        for event in events {
-            if let Event::WindowEvent {
+    event_loop.run(
+        move |event: Event<()>, _window_target: _, control_flow: &mut ControlFlow| match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            Event::WindowEvent {
                 event:
                     WindowEvent::KeyboardInput {
                         input:
@@ -31,59 +37,62 @@ fn main() -> Result<(), crow::Error> {
                         ..
                     },
                 ..
-            } = event
-            {
+            } => {
                 if state == ElementState::Pressed {
                     offset = 1;
                 } else {
                     offset = 0;
                 }
             }
-        }
+            Event::MainEventsCleared => ctx.window().request_redraw(),
+            Event::RedrawRequested(_) => {
+                let mut surface = ctx.surface();
+                ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
+                ctx.clear_color(&mut target_texture, (0.0, 0.0, 0.0, 0.0));
 
-        ctx.clear_color(surface, (0.3, 0.3, 0.8, 1.0));
-        ctx.clear_color(&mut target_texture, (0.0, 0.0, 0.0, 0.0));
+                ctx.draw(
+                    &mut target_texture,
+                    &texture,
+                    (0 - offset, offset),
+                    &DrawConfig {
+                        blend_mode: BlendMode::Additive,
+                        color_modulation: color::RED,
+                        ..Default::default()
+                    },
+                );
+                ctx.draw(
+                    &mut target_texture,
+                    &texture,
+                    (0, 0),
+                    &DrawConfig {
+                        blend_mode: BlendMode::Additive,
+                        color_modulation: color::GREEN,
+                        ..Default::default()
+                    },
+                );
+                ctx.draw(
+                    &mut target_texture,
+                    &texture,
+                    (offset, 0 - offset),
+                    &DrawConfig {
+                        blend_mode: BlendMode::Additive,
+                        color_modulation: color::BLUE,
+                        ..Default::default()
+                    },
+                );
 
-        ctx.draw(
-            &mut target_texture,
-            &texture,
-            (0 - offset, offset),
-            &DrawConfig {
-                blend_mode: BlendMode::Additive,
-                color_modulation: color::RED,
-                ..Default::default()
-            },
-        );
-        ctx.draw(
-            &mut target_texture,
-            &texture,
-            (0, 0),
-            &DrawConfig {
-                blend_mode: BlendMode::Additive,
-                color_modulation: color::GREEN,
-                ..Default::default()
-            },
-        );
-        ctx.draw(
-            &mut target_texture,
-            &texture,
-            (offset, 0 - offset),
-            &DrawConfig {
-                blend_mode: BlendMode::Additive,
-                color_modulation: color::BLUE,
-                ..Default::default()
-            },
-        );
-
-        ctx.draw(
-            surface,
-            &target_texture,
-            (100, 100),
-            &DrawConfig {
-                scale: (4, 4),
-                ..Default::default()
-            },
-        );
-        true
-    })
+                ctx.draw(
+                    &mut surface,
+                    &target_texture,
+                    (100, 100),
+                    &DrawConfig {
+                        scale: (4, 4),
+                        ..Default::default()
+                    },
+                );
+                ctx.present(surface).unwrap();
+            }
+            _ => (),
+        },
+    )
 }
