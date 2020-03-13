@@ -136,7 +136,7 @@ impl Backend {
             bug!("fractional HiDPI scaling is not yet supported: {}", dpi);
         }
         let dpi = dpi.round() as u32;
-        trace!("Calculated DPI: {}", dpi);
+        info!("Calculated DPI: {}", dpi);
 
         // Load the OpenGL function pointers
         gl::load_with(|symbol| gl_context.get_proc_address(symbol));
@@ -152,7 +152,7 @@ impl Backend {
         let window_size: LogicalSize<u32> =
             gl_context.window().inner_size().to_logical(f64::from(dpi));
         let window_size: (u32, u32) = window_size.into();
-        trace!("Logical window size: {}x{}", window_size.0, window_size.1);
+        info!("Logical window size: {}x{}", window_size.0, window_size.1);
 
         let state = OpenGlState::new(
             uniforms,
