@@ -25,17 +25,36 @@ This crate requires a GPU supporting OpenGL Version **3.3**.
 ## Examples
 
 ```rust
-use crow::{glutin::window::WindowBuilder, Context, DrawConfig, Texture, WindowSurface};
+use crow::{
+    glutin::{
+        event::{Event, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
+        window::WindowBuilder,
+    },
+    Context, DrawConfig, Texture,
+};
 
 fn main() -> Result<(), crow::Error> {
-    let mut ctx = Context::new(WindowBuilder::new())?;
+    let event_loop = EventLoop::new();
+    let mut ctx = Context::new(WindowBuilder::new(), &event_loop)?;
 
     let texture = Texture::load(&mut ctx, "./textures/player.png")?;
 
-    ctx.run(move |ctx: &mut Context, surface: &mut WindowSurface, _| {
-        ctx.clear_color(surface, (0.4, 0.4, 0.8, 1.0));
-        ctx.draw(surface, &texture, (100, 150), &DrawConfig::default());
-        true
-    })
+    event_loop.run(
+        move |event: Event<()>, _window_target: _, control_flow: &mut ControlFlow| match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            Event::MainEventsCleared => ctx.window().request_redraw(),
+            Event::RedrawRequested(_) => {
+                let mut surface = ctx.surface();
+                ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
+                ctx.draw(&mut surface, &texture, (100, 150), &DrawConfig::default());
+                ctx.present(surface).unwrap();
+            }
+            _ => (),
+        },
+    )
 }
 ```

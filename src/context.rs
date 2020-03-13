@@ -68,9 +68,9 @@ impl Context {
     /// `InvalidTextureSize` error.
     ///
     /// ```rust, no_run
-    /// use crow::{Context, glutin::window::WindowBuilder};
+    /// use crow::{Context, glutin::{window::WindowBuilder, event_loop::EventLoop}};
     ///
-    /// let mut ctx = Context::new(WindowBuilder::new()).unwrap();
+    /// let mut ctx = Context::new(WindowBuilder::new(), &EventLoop::new()).unwrap();
     /// println!("maximum supported texture size: {:?}", ctx.maximum_texture_size());
     /// ```
     pub fn maximum_texture_size(&self) -> (u32, u32) {
@@ -175,9 +175,15 @@ impl Context {
     /// # Examples
     ///
     /// ```no_run
-    /// use crow::{Context, glutin::window::WindowBuilder};
+    /// use crow::{
+    ///     glutin::{event_loop::EventLoop, window::WindowBuilder},
+    ///     Context,
+    /// };
     ///
-    /// let context = Context::new(WindowBuilder::new().with_title("Starting"))?;
+    /// let context = Context::new(
+    ///     WindowBuilder::new().with_title("Starting"),
+    ///     &EventLoop::new(),
+    /// )?;
     ///
     /// context.window().set_title("Running");
     /// # Ok::<(), crow::Error>(())
