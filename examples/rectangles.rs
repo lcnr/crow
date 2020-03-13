@@ -1,3 +1,10 @@
+//! An example using a draw target modifiers: `Offset` and `Scaled`.
+//!
+//! This is also one of the more demanding targets,
+//! it might be necessary to run this in `--release` mode.
+#[macro_use]
+extern crate log;
+
 use std::{
     collections::VecDeque,
     thread,
@@ -5,7 +12,12 @@ use std::{
 };
 
 use crow::{
-    glutin::{Event, WindowBuilder, WindowEvent},
+    glutin::{
+        dpi::LogicalSize,
+        event::{Event, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
+        window::WindowBuilder,
+    },
     target::{Offset, Scaled},
     Context, DrawConfig, DrawTarget, Texture,
 };
@@ -22,16 +34,23 @@ pub struct Rectangle {
 }
 
 fn main() -> Result<(), crow::Error> {
+    pretty_env_logger::formatted_timed_builder()
+        .filter_level(log::LevelFilter::max())
+        .init();
+
+    let event_loop = EventLoop::new();
     let mut ctx = Context::new(
         WindowBuilder::new()
-            .with_dimensions(From::from((WINDOW_SIZE.0 * SCALE, WINDOW_SIZE.1 * SCALE)))
+            .with_inner_size(LogicalSize::new(
+                WINDOW_SIZE.0 * SCALE,
+                WINDOW_SIZE.1 * SCALE,
+            ))
             .with_resizable(false),
+        &event_loop,
     )?;
 
     let rectangle_vertical = Texture::load(&mut ctx, "textures/rectangle_vertical.png")?;
     let rectangle_horizontal = Texture::load(&mut ctx, "textures/rectangle_horizontal.png")?;
-
-    let mut surface = Scaled::new(ctx.window_surface(), (SCALE, SCALE));
 
     let mut rng = rand::thread_rng();
 
@@ -48,60 +67,56 @@ fn main() -> Result<(), crow::Error> {
     });
 
     let mut position = 0;
-
-    let mut fin = false;
-    let mut fps_limiter = FrameRateLimiter::new(30);
-
     let mut frames_to_next = 0;
-    loop {
-        ctx.events_loop().poll_events(|event| {
-            fin = match event {
-                Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::CloseRequested => true,
-                    _ => false,
-                },
-                _ => false,
+
+    let mut fps = FrameRateLimiter::new(60);
+    event_loop.run(
+        move |event: Event<()>, _window_target: _, control_flow: &mut ControlFlow| match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            Event::MainEventsCleared => ctx.window().request_redraw(),
+            Event::RedrawRequested(_) => {
+                let mut surface = Scaled::new(ctx.surface(), (SCALE, SCALE));
+
+                ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
+
+                if frames_to_next == 0 {
+                    frames_to_next = rng.gen_range(50, 170);
+                    rectangles.push_back(Rectangle {
+                        position: (
+                            position + WINDOW_SIZE.0 as i32,
+                            rng.gen_range(-40, WINDOW_SIZE.1 as i32),
+                        ),
+                        size: (rng.gen_range(40, 200), rng.gen_range(40, 200)),
+                        color: rng.gen(),
+                    })
+                } else {
+                    frames_to_next -= 1;
+                }
+
+                position += 1;
+
+                if let Some(first) = rectangles.front() {
+                    if (first.position.0 + first.size.0 as i32) < position as i32 {
+                        rectangles.pop_front();
+                    }
+                }
+
+                draw_rectangles(
+                    &rectangles,
+                    &rectangle_vertical,
+                    &rectangle_horizontal,
+                    &mut Offset::new(&mut surface, (position, 0)),
+                    &mut ctx,
+                );
+                ctx.present(surface.into_inner()).unwrap();
             }
-        });
-
-        ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
-
-        if frames_to_next == 0 {
-            frames_to_next = rng.gen_range(50, 170);
-            rectangles.push_back(Rectangle {
-                position: (
-                    position + WINDOW_SIZE.0 as i32,
-                    rng.gen_range(-40, WINDOW_SIZE.1 as i32),
-                ),
-                size: (rng.gen_range(40, 200), rng.gen_range(40, 200)),
-                color: rng.gen(),
-            })
-        } else {
-            frames_to_next -= 1;
-        }
-
-        position += 1;
-
-        if let Some(first) = rectangles.front() {
-            if (first.position.0 + first.size.0 as i32) < position as i32 {
-                rectangles.pop_front();
-            }
-        }
-
-        draw_rectangles(
-            &rectangles,
-            &rectangle_vertical,
-            &rectangle_horizontal,
-            &mut Offset::new(&mut surface, (position, 0)),
-            &mut ctx,
-        )?;
-
-        ctx.finalize_frame()?;
-        if fin {
-            break Ok(());
-        }
-        fps_limiter.frame();
-    }
+            Event::RedrawEventsCleared => fps.frame(),
+            _ => (),
+        },
+    )
 }
 
 fn mat((r, g, b): (f32, f32, f32)) -> [[f32; 4]; 4] {
@@ -119,7 +134,7 @@ pub fn draw_rectangles(
     horizontal: &Texture,
     surface: &mut impl DrawTarget,
     ctx: &mut Context,
-) -> Result<(), crow::Error> {
+) {
     for rectangle in rectangles.iter() {
         let right_pos = rectangle.position.0 + rectangle.size.0 as i32 - vertical.width() as i32;
         let mut height = rectangle.size.1;
@@ -228,8 +243,6 @@ pub fn draw_rectangles(
             },
         );
     }
-
-    Ok(())
 }
 
 pub struct FrameRateLimiter {
@@ -249,12 +262,13 @@ impl FrameRateLimiter {
 
     pub fn frame(&mut self) {
         self.frame_count += 1;
-        if let Some(dur) = (Duration::from_micros(1_000_000 / self.fps as u64) * self.frame_count)
-            .checked_sub(self.start.elapsed())
-        {
-            thread::sleep(dur)
+        let finish = Duration::from_micros(1_000_000 / u64::from(self.fps)) * self.frame_count;
+        if self.start.elapsed() < finish {
+            while self.start.elapsed() < finish {
+                thread::yield_now();
+            }
         } else {
-            println!("LAG at frame {}!", self.frame_count)
+            warn!("Lag at frame {}", self.frame_count)
         }
     }
 }

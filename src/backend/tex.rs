@@ -42,6 +42,11 @@ impl RawTexture {
             });
         }
 
+        info!(
+            "Creating RawTexture with dimensions: {}x{}",
+            dimensions.0, dimensions.1
+        );
+
         let mut id = 0;
         unsafe {
             // SAFETY: `n` is one.

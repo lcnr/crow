@@ -3,7 +3,12 @@ use std::{cmp, convert::TryFrom, ffi::CStr};
 use static_assertions::{assert_type_eq_all, const_assert_eq};
 
 use gl::types::*;
-use glutin::{ContextWrapper, EventsLoop, PossiblyCurrent, Window, WindowBuilder};
+use glutin::{
+    dpi::LogicalSize,
+    event_loop::EventLoop,
+    window::{Window, WindowBuilder},
+    ContextWrapper, PossiblyCurrent,
+};
 
 use crate::{FinalizeError, NewContextError};
 
@@ -47,7 +52,9 @@ impl GlConstants {
 
         // must be at least 1024
         let texture_size = get(gl::MAX_TEXTURE_SIZE, "texture_size");
+        trace!("MAX_TEXTURE_SIZE: {}", texture_size);
         let renderbuffer_size = get(gl::MAX_RENDERBUFFER_SIZE, "renderbuffer_size");
+        trace!("MAX_RENDERBUFFER_SIZE: {}", renderbuffer_size);
         let size = cmp::min(texture_size, renderbuffer_size);
 
         // FIXES https://github.com/lcnr/crow/issues/15
@@ -68,6 +75,11 @@ impl GlConstants {
                                 get(gl::MAX_FRAMEBUFFER_WIDTH, "framebuffer_width");
                             let framebuffer_height =
                                 get(gl::MAX_FRAMEBUFFER_HEIGHT, "framebuffer_height");
+                            trace!(
+                                "MAX_FRAMBUFFER_SIZE: {}x{}",
+                                framebuffer_width,
+                                framebuffer_height
+                            );
 
                             return GlConstants {
                                 max_texture_size: (
@@ -92,20 +104,22 @@ impl GlConstants {
 #[derive(Debug)]
 pub struct Backend {
     state: OpenGlState,
-    events_loop: EventsLoop,
     gl_context: ContextWrapper<PossiblyCurrent, Window>,
     constants: GlConstants,
     program: Program,
     debug_program: DebugProgram,
+    dpi: u32,
 }
 
 impl Backend {
-    pub fn initialize(window: WindowBuilder) -> Result<Self, NewContextError> {
-        let events_loop = EventsLoop::new();
+    pub fn initialize<T>(
+        window: WindowBuilder,
+        event_loop: &EventLoop<T>,
+    ) -> Result<Self, NewContextError> {
         let gl_context = glutin::ContextBuilder::new()
             .with_depth_buffer(16)
             .with_vsync(false)
-            .build_windowed(window, &events_loop)
+            .build_windowed(window, event_loop)
             .map_err(NewContextError::CreationError)?;
 
         // It is essential to make the context current before calling `gl::load_with`.
@@ -115,9 +129,17 @@ impl Backend {
                 .map_err(|(_, e)| NewContextError::ContextError(e))?
         };
 
+        let dpi = gl_context.window().scale_factor();
+        if dpi < 0.5 {
+            bug!("unexpected dpi: {}", dpi);
+        } else if dpi.fract().min(1.0 - dpi.fract()) > std::f64::EPSILON {
+            bug!("fractional HiDPI scaling is not yet supported: {}", dpi);
+        }
+        let dpi = dpi.round() as u32;
+        info!("Calculated DPI: {}", dpi);
+
         // Load the OpenGL function pointers
-        // TODO: `as *const _` will not be needed once glutin is updated to the latest gl version
-        gl::load_with(|symbol| gl_context.get_proc_address(symbol) as *const _);
+        gl::load_with(|symbol| gl_context.get_proc_address(symbol));
 
         unsafe {
             // SAFETY: `gl::BLEND` is a valid capability
@@ -127,32 +149,37 @@ impl Backend {
         let (program, uniforms) = Program::new();
         let (debug_program, debug_uniforms) = DebugProgram::new();
 
+        let window_size: LogicalSize<u32> =
+            gl_context.window().inner_size().to_logical(f64::from(dpi));
+        let window_size: (u32, u32) = window_size.into();
+        info!("Logical window size: {}x{}", window_size.0, window_size.1);
+
         let state = OpenGlState::new(
             uniforms,
             debug_uniforms,
             (program.id, program.vao),
-            gl_context
-                .window()
-                .get_inner_size()
-                .map_or((1024, 720), |s| s.into()),
+            window_size,
         );
 
         let constants = GlConstants::load();
+        info!(
+            "Maximum supported texture size: {}x{}",
+            constants.max_texture_size.0, constants.max_texture_size.1
+        );
 
         Ok(Self {
             state,
-            events_loop,
             gl_context,
             constants,
             program,
             debug_program,
+            dpi,
         })
     }
 
     pub fn resize_window(&mut self, width: u32, height: u32) {
-        self.gl_context
-            .window()
-            .set_inner_size(From::from((width, height)))
+        let size: LogicalSize<u32> = From::from((width, height));
+        self.gl_context.window().set_inner_size(size);
     }
 
     pub fn window(&self) -> &Window {
@@ -160,11 +187,12 @@ impl Backend {
     }
 
     pub fn window_dimensions(&self) -> (u32, u32) {
-        if let Some(dimensions) = self.gl_context.window().get_inner_size() {
-            dimensions.into()
-        } else {
-            bug!("failed to get window_dimensions")
-        }
+        let size: LogicalSize<u32> = self
+            .gl_context
+            .window()
+            .inner_size()
+            .to_logical(f64::from(self.dpi));
+        size.into()
     }
 
     pub fn take_screenshot(&mut self, (width, height): (u32, u32)) -> Vec<u8> {
@@ -272,12 +300,12 @@ impl Backend {
         Ok(())
     }
 
-    pub fn constants(&self) -> &GlConstants {
-        &self.constants
+    pub fn dpi_factor(&self) -> u32 {
+        self.dpi
     }
 
-    pub fn events_loop(&mut self) -> &mut EventsLoop {
-        &mut self.events_loop
+    pub fn constants(&self) -> &GlConstants {
+        &self.constants
     }
 }
 
