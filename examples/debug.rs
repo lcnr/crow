@@ -5,7 +5,7 @@ use crow::{
         event_loop::{ControlFlow, EventLoop},
         window::WindowBuilder,
     },
-    Context, DrawConfig, Texture,
+    Context,
 };
 
 fn main() -> Result<(), crow::Error> {

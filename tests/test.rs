@@ -5,7 +5,7 @@ use image::RgbaImage;
 use rand::prelude::*;
 
 use crow::{
-    glutin::{dpi::LogicalSize, window::WindowBuilder},
+    glutin::{dpi::LogicalSize, event_loop::EventLoop, window::WindowBuilder},
     target::{Offset, Scaled},
     Context, DrawConfig, Texture,
 };
@@ -247,6 +247,7 @@ impl TestRunner {
             WindowBuilder::new()
                 .with_inner_size(LogicalSize::new(720, 480))
                 .with_visible(false),
+            &EventLoop::new(),
         )
         .unwrap();
 

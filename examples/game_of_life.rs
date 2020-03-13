@@ -7,6 +7,7 @@ use crow::{
     glutin::{
         dpi::LogicalSize,
         event::{ElementState, Event, MouseButton, VirtualKeyCode, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
         window::WindowBuilder,
     },
     target::Scaled,
@@ -27,8 +28,10 @@ fn mat((r, g, b): (f32, f32, f32)) -> [[f32; 4]; 4] {
 }
 
 fn main() -> Result<(), crow::Error> {
+    let event_loop = EventLoop::new();
     let mut ctx = Context::new(
         WindowBuilder::new().with_inner_size(LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT)),
+        &event_loop,
     )?;
 
     let mut texture = Texture::new(&mut ctx, (1, 1))?;
@@ -38,64 +41,67 @@ fn main() -> Result<(), crow::Error> {
     let mut cells =
         [[false; (WINDOW_HEIGHT / CELL_SIZE) as usize]; (WINDOW_WIDTH / CELL_SIZE) as usize];
 
-    ctx.run(move |ctx: &mut Context, surface: &mut _, events| {
-        let surface = &mut Scaled::new(surface, (CELL_SIZE, CELL_SIZE));
-        for event in events {
-            if let Event::WindowEvent { event, .. } = event {
-                match event {
-                    WindowEvent::CursorMoved { position, .. } => mouse_position = position.into(),
-                    WindowEvent::KeyboardInput { input, .. } => {
-                        if input.state == ElementState::Pressed
-                            && input.virtual_keycode == Some(VirtualKeyCode::Space)
-                        {
-                            step(&mut cells);
-                        }
+    event_loop.run(
+        move |event: Event<()>, _window_target: _, control_flow: &mut ControlFlow| match event {
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                WindowEvent::CursorMoved { position, .. } => mouse_position = position.into(),
+                WindowEvent::KeyboardInput { input, .. } => {
+                    if input.state == ElementState::Pressed
+                        && input.virtual_keycode == Some(VirtualKeyCode::Space)
+                    {
+                        step(&mut cells);
                     }
-                    WindowEvent::MouseInput {
-                        state: ElementState::Pressed,
-                        button: MouseButton::Left,
-                        ..
-                    } => {
-                        let (x, y) = (
-                            mouse_position.0 / CELL_SIZE as i32,
-                            mouse_position.1 / CELL_SIZE as i32,
-                        );
-                        if let Some(cell) = cells
-                            .get_mut(x as usize)
-                            .and_then(|row| row.get_mut(y as usize))
-                        {
-                            *cell = !*cell;
-                        }
-                    }
-                    _ => (),
                 }
-            }
-        }
-
-        ctx.clear_color(surface, (0.4, 0.4, 0.8, 1.0));
-
-        for (x, row) in cells.iter().enumerate() {
-            for (y, &cell) in row.iter().enumerate() {
-                if cell {
-                    let color_modulation = match neighbors(&cells, x as isize, y as isize) {
-                        2 | 3 => mat((1.0, 1.0, 1.0)),
-                        _ => mat((0.0, 0.0, 0.0)),
-                    };
-
-                    ctx.draw(
-                        surface,
-                        &texture,
-                        (x as i32, (row.len() - 1 - y) as i32),
-                        &DrawConfig {
-                            color_modulation,
-                            ..Default::default()
-                        },
+                WindowEvent::MouseInput {
+                    state: ElementState::Pressed,
+                    button: MouseButton::Left,
+                    ..
+                } => {
+                    let (x, y) = (
+                        mouse_position.0 / CELL_SIZE as i32,
+                        mouse_position.1 / CELL_SIZE as i32,
                     );
+                    if let Some(cell) = cells
+                        .get_mut(x as usize)
+                        .and_then(|row| row.get_mut(y as usize))
+                    {
+                        *cell = !*cell;
+                    }
                 }
+                _ => (),
+            },
+            Event::MainEventsCleared => ctx.window().request_redraw(),
+            Event::RedrawRequested(_) => {
+                let mut surface = Scaled::new(ctx.surface(), (CELL_SIZE, CELL_SIZE));
+
+                ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
+
+                for (x, row) in cells.iter().enumerate() {
+                    for (y, &cell) in row.iter().enumerate() {
+                        if cell {
+                            let color_modulation = match neighbors(&cells, x as isize, y as isize) {
+                                2 | 3 => mat((1.0, 1.0, 1.0)),
+                                _ => mat((0.0, 0.0, 0.0)),
+                            };
+
+                            ctx.draw(
+                                &mut surface,
+                                &texture,
+                                (x as i32, (row.len() - 1 - y) as i32),
+                                &DrawConfig {
+                                    color_modulation,
+                                    ..Default::default()
+                                },
+                            );
+                        }
+                    }
+                }
+                ctx.present(surface.into_inner()).unwrap();
             }
-        }
-        true
-    })
+            _ => (),
+        },
+    )
 }
 
 fn alive(
