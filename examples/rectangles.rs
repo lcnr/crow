@@ -1,7 +1,23 @@
-use std::collections::VecDeque;
+//! An example using a draw target modifiers: `Offset` and `Scaled`.
+//!
+//! This is also one of the more demanding targets,
+//! it might be necessary to run this in `--release` mode.
+#[macro_use]
+extern crate log;
+
+use std::{
+    collections::VecDeque,
+    thread,
+    time::{Duration, Instant},
+};
 
 use crow::{
-    glutin::{dpi::LogicalSize, window::WindowBuilder},
+    glutin::{
+        dpi::LogicalSize,
+        event::{Event, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
+        window::WindowBuilder,
+    },
     target::{Offset, Scaled},
     Context, DrawConfig, DrawTarget, Texture,
 };
@@ -18,6 +34,11 @@ pub struct Rectangle {
 }
 
 fn main() -> Result<(), crow::Error> {
+    pretty_env_logger::formatted_timed_builder()
+        .filter_level(log::LevelFilter::max())
+        .init();
+
+    let event_loop = EventLoop::new();
     let mut ctx = Context::new(
         WindowBuilder::new()
             .with_inner_size(LogicalSize::new(
@@ -25,6 +46,7 @@ fn main() -> Result<(), crow::Error> {
                 WINDOW_SIZE.1 * SCALE,
             ))
             .with_resizable(false),
+        &event_loop,
     )?;
 
     let rectangle_vertical = Texture::load(&mut ctx, "textures/rectangle_vertical.png")?;
@@ -45,45 +67,56 @@ fn main() -> Result<(), crow::Error> {
     });
 
     let mut position = 0;
-
     let mut frames_to_next = 0;
-    ctx.run(move |ctx: &mut Context, surface: &mut _, _| {
-        let mut surface = Scaled::new(surface, (SCALE, SCALE));
 
-        ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
+    let mut fps = FrameRateLimiter::new(60);
+    event_loop.run(
+        move |event: Event<()>, _window_target: _, control_flow: &mut ControlFlow| match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            Event::MainEventsCleared => ctx.window().request_redraw(),
+            Event::RedrawRequested(_) => {
+                let mut surface = Scaled::new(ctx.surface(), (SCALE, SCALE));
 
-        if frames_to_next == 0 {
-            frames_to_next = rng.gen_range(50, 170);
-            rectangles.push_back(Rectangle {
-                position: (
-                    position + WINDOW_SIZE.0 as i32,
-                    rng.gen_range(-40, WINDOW_SIZE.1 as i32),
-                ),
-                size: (rng.gen_range(40, 200), rng.gen_range(40, 200)),
-                color: rng.gen(),
-            })
-        } else {
-            frames_to_next -= 1;
-        }
+                ctx.clear_color(&mut surface, (0.3, 0.3, 0.8, 1.0));
 
-        position += 1;
+                if frames_to_next == 0 {
+                    frames_to_next = rng.gen_range(50, 170);
+                    rectangles.push_back(Rectangle {
+                        position: (
+                            position + WINDOW_SIZE.0 as i32,
+                            rng.gen_range(-40, WINDOW_SIZE.1 as i32),
+                        ),
+                        size: (rng.gen_range(40, 200), rng.gen_range(40, 200)),
+                        color: rng.gen(),
+                    })
+                } else {
+                    frames_to_next -= 1;
+                }
 
-        if let Some(first) = rectangles.front() {
-            if (first.position.0 + first.size.0 as i32) < position as i32 {
-                rectangles.pop_front();
+                position += 1;
+
+                if let Some(first) = rectangles.front() {
+                    if (first.position.0 + first.size.0 as i32) < position as i32 {
+                        rectangles.pop_front();
+                    }
+                }
+
+                draw_rectangles(
+                    &rectangles,
+                    &rectangle_vertical,
+                    &rectangle_horizontal,
+                    &mut Offset::new(&mut surface, (position, 0)),
+                    &mut ctx,
+                );
+                ctx.present(surface.into_inner()).unwrap();
             }
-        }
-
-        draw_rectangles(
-            &rectangles,
-            &rectangle_vertical,
-            &rectangle_horizontal,
-            &mut Offset::new(&mut surface, (position, 0)),
-            ctx,
-        );
-
-        true
-    })
+            Event::RedrawEventsCleared => fps.frame(),
+            _ => (),
+        },
+    )
 }
 
 fn mat((r, g, b): (f32, f32, f32)) -> [[f32; 4]; 4] {
@@ -209,5 +242,33 @@ pub fn draw_rectangles(
                 ..Default::default()
             },
         );
+    }
+}
+
+pub struct FrameRateLimiter {
+    start: Instant,
+    frame_count: u32,
+    fps: u32,
+}
+
+impl FrameRateLimiter {
+    pub fn new(fps: u32) -> Self {
+        Self {
+            start: Instant::now(),
+            frame_count: 0,
+            fps,
+        }
+    }
+
+    pub fn frame(&mut self) {
+        self.frame_count += 1;
+        let finish = Duration::from_micros(1_000_000 / u64::from(self.fps)) * self.frame_count;
+        if self.start.elapsed() < finish {
+            while self.start.elapsed() < finish {
+                thread::yield_now();
+            }
+        } else {
+            warn!("Lag at frame {}", self.frame_count)
+        }
     }
 }
