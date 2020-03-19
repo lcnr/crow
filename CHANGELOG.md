@@ -3,7 +3,7 @@
 ## 0.6.0
 
 - `fn Context::window_surface` was renamed to `fn Context::surface` and may now panic if used incorrectly.
-- `fn Context::finalize_frame` was renamed to `fn Context::presend(surface: WindowSurface)`.
+- `fn Context::finalize_frame` was changed to `fn Context::presend(surface: WindowSurface)`.
 - add logging using the `log` crate.
 - update `glutin` to version `0.24`
 
