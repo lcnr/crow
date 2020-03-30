@@ -48,7 +48,7 @@ fn simple(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     ctx.clear_color(&mut b, (0.0, 1.0, 0.0, 1.0));
     ctx.draw(&mut a, &b, (16, 16), &DrawConfig::default());
 
-    Ok(a.get_image_data(ctx))
+    Ok(ctx.image_data(&a))
 }
 
 fn from_image(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -67,7 +67,7 @@ fn from_image(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     ctx.clear_color(&mut a, (1.0, 0.0, 0.0, 1.0));
     ctx.draw(&mut a, &b, (1, 1), &DrawConfig::default());
 
-    Ok(a.get_image_data(ctx))
+    Ok(ctx.image_data(&a))
 }
 
 fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -90,7 +90,7 @@ fn color_modulation(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
         },
     );
 
-    Ok(a.get_image_data(ctx))
+    Ok(ctx.image_data(&a))
 }
 
 fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -114,7 +114,7 @@ fn flip_vertically(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
         },
     );
 
-    Ok(a.get_image_data(ctx))
+    Ok(ctx.image_data(&a))
 }
 
 fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -126,7 +126,7 @@ fn section_drawing(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
 
     ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default());
 
-    Ok(target.get_image_data(ctx))
+    Ok(ctx.image_data(&target))
 }
 
 fn section_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -143,7 +143,7 @@ fn section_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
         &DrawConfig::default(),
     );
 
-    Ok(target.get_image_data(ctx))
+    Ok(ctx.image_data(&target))
 }
 
 fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -164,7 +164,7 @@ fn section_flipped(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
         },
     );
 
-    Ok(target.get_image_data(ctx))
+    Ok(ctx.image_data(&target))
 }
 
 fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -185,7 +185,7 @@ fn section_scaled(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
         },
     );
 
-    Ok(target.get_image_data(ctx))
+    Ok(ctx.image_data(&target))
 }
 
 fn zero_section(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -197,7 +197,7 @@ fn zero_section(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
 
     ctx.draw(&mut target, &source, (3, 5), &DrawConfig::default());
 
-    Ok(target.get_image_data(ctx))
+    Ok(ctx.image_data(&target))
 }
 
 fn debug_lines(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -207,7 +207,7 @@ fn debug_lines(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     ctx.debug_line(&mut target, (2, 2), (2, 8), (1.0, 0.0, 0.0, 1.0));
     ctx.debug_line(&mut target, (4, 9), (8, 9), (1.0, 0.0, 0.0, 1.0));
 
-    Ok(target.get_image_data(ctx))
+    Ok(ctx.image_data(&target))
 }
 
 fn debug_rectangle(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -216,7 +216,7 @@ fn debug_rectangle(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
 
     ctx.debug_rectangle(&mut target, (1, 1), (4, 3), (0.0, 1.0, 0.0, 1.0));
 
-    Ok(target.get_image_data(ctx))
+    Ok(ctx.image_data(&target))
 }
 
 fn lines_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
@@ -227,7 +227,7 @@ fn lines_offset(ctx: &mut Context) -> Result<RgbaImage, crow::Error> {
     ctx.debug_line(&mut target, (1, 0), (1, 8), (1.0, 0.0, 0.0, 1.0));
     ctx.debug_line(&mut target, (3, 7), (7, 7), (1.0, 0.0, 0.0, 1.0));
 
-    Ok(image.get_image_data(ctx))
+    Ok(ctx.image_data(&image))
 }
 
 #[derive(Default)]

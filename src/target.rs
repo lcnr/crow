@@ -1,4 +1,6 @@
 //! A collect of useful draw modifiers.
+use image::RgbaImage;
+
 use crate::{Context, DrawConfig, DrawTarget, Texture};
 
 /// Can be used as a [`DrawTarget`] which modifies the scale of each draw call.
@@ -89,6 +91,10 @@ impl<T: DrawTarget> DrawTarget for Scaled<T> {
             color,
         )
     }
+
+    fn get_image_data(&self, ctx: &mut Context) -> RgbaImage {
+        self.inner.get_image_data(ctx)
+    }
 }
 
 /// Can be used as a [`DrawTarget`] which offsets the `position` of each draw call by a given `offset`.
@@ -165,5 +171,9 @@ impl<T: DrawTarget> DrawTarget for Offset<T> {
             (upper_right.0 - self.offset.0, upper_right.1 - self.offset.1),
             color,
         )
+    }
+
+    fn get_image_data(&self, ctx: &mut Context) -> RgbaImage {
+        self.inner.get_image_data(ctx)
     }
 }

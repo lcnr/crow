@@ -112,34 +112,6 @@ impl Texture {
 
         Rc::get_mut(&mut self.inner).unwrap()
     }
-
-    /// Stores the current state of this `Texture` in an image.
-    /// This function is fairly slow and should not be used carelessly.
-    pub fn get_image_data(&self, ctx: &mut Context) -> RgbaImage {
-        let _ = ctx;
-
-        let data = ctx.backend.get_image_data(&self.inner);
-
-        let (width, height) = self.inner.dimensions;
-        let skip_above = height - (self.position.1 + self.size.1);
-        let skip_vertical = self.position.0 * 4;
-        let take_vertical = self.size.0 * 4;
-
-        let image_data = data
-            .chunks(width as usize * 4)
-            .skip(skip_above as usize)
-            .rev()
-            .skip(self.position.1 as usize)
-            .flat_map(|row| {
-                row.iter()
-                    .skip(skip_vertical as usize)
-                    .take(take_vertical as usize)
-            })
-            .copied()
-            .collect();
-
-        RgbaImage::from_vec(self.size.0, self.size.1, image_data).unwrap()
-    }
 }
 
 impl DrawTarget for Texture {
@@ -221,5 +193,31 @@ impl DrawTarget for Texture {
             upper_right,
             color,
         )
+    }
+
+    fn get_image_data(&self, ctx: &mut Context) -> RgbaImage {
+        let _ = ctx;
+
+        let data = ctx.backend.get_image_data(&self.inner);
+
+        let (width, height) = self.inner.dimensions;
+        let skip_above = height - (self.position.1 + self.size.1);
+        let skip_vertical = self.position.0 * 4;
+        let take_vertical = self.size.0 * 4;
+
+        let image_data = data
+            .chunks(width as usize * 4)
+            .skip(skip_above as usize)
+            .rev()
+            .skip(self.position.1 as usize)
+            .flat_map(|row| {
+                row.iter()
+                    .skip(skip_vertical as usize)
+                    .take(take_vertical as usize)
+            })
+            .copied()
+            .collect();
+
+        RgbaImage::from_vec(self.size.0, self.size.1, image_data).unwrap()
     }
 }

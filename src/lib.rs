@@ -84,6 +84,8 @@ pub use error::*;
 pub use glutin;
 pub use image;
 
+use image::RgbaImage;
+
 use backend::{tex::RawTexture, Backend};
 
 trait UnwrapBug<T> {
@@ -148,6 +150,11 @@ pub trait DrawTarget {
         upper_right: (i32, i32),
         color: (f32, f32, f32, f32),
     );
+
+    /// Returns the current state of the `DrawTarget`.
+    ///
+    /// For the window surface, this is a simple screenshot.
+    fn get_image_data(&self, ctx: &mut Context) -> RgbaImage;
 }
 
 impl<T: DrawTarget> DrawTarget for &mut T {
@@ -187,6 +194,10 @@ impl<T: DrawTarget> DrawTarget for &mut T {
         color: (f32, f32, f32, f32),
     ) {
         <T>::receive_rectangle(self, ctx, lower_left, upper_right, color)
+    }
+
+    fn get_image_data(&self, ctx: &mut Context) -> RgbaImage {
+        <T>::get_image_data(self, ctx)
     }
 }
 

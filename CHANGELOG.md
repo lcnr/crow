@@ -1,9 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+- remove `fn Context::take_screenshot`.
+- remove `fn Texture::get_image_data`.
+- add required trait method `fn DrawTarget::get_image_data`.
+- add `fn Context::image_data` which can be used on all `DrawTarget`s.
+
 ## 0.6.0
 
 - `fn Context::window_surface` was renamed to `fn Context::surface` and may now panic if used incorrectly.
-- `fn Context::finalize_frame` was changed to `fn Context::presend(surface: WindowSurface)`.
+- `fn Context::finalize_frame` was changed to `fn Context::present(surface: WindowSurface)`.
 - add logging using the `log` crate.
 - update `glutin` to version `0.24`
 

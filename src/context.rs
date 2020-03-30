@@ -151,23 +151,14 @@ impl Context {
         target.receive_clear_depth(self)
     }
 
-    /// Stores the current state of the window in an image.
-    /// This function is fairly slow and should not be used carelessly.
+    /// Loads the current state of a [`DrawTarget`] into an image.
     ///
-    /// It is currently not possible to screenshot a part of the screen.
-    pub fn take_screenshot(&mut self) -> RgbaImage {
-        let (width, height) = self.window_dimensions();
-
-        let data = self.backend.take_screenshot((width, height));
-
-        let reversed_data = data
-            .chunks(width as usize * 4)
-            .rev()
-            .flat_map(|row| row.iter())
-            .copied()
-            .collect();
-
-        RgbaImage::from_vec(width, height, reversed_data).unwrap()
+    /// [`DrawTarget`]: trait.DrawTarget.html
+    pub fn image_data<T>(&mut self, image: &T) -> RgbaImage
+    where
+        T: DrawTarget,
+    {
+        image.get_image_data(self)
     }
 
     /// Returns the inner window.
@@ -285,5 +276,20 @@ impl DrawTarget for WindowSurface {
         let dpi = ctx.backend.dpi_factor();
         ctx.backend
             .debug_draw(true, 0, dim, dpi, lower_left, upper_right, color)
+    }
+
+    fn get_image_data(&self, ctx: &mut Context) -> RgbaImage {
+        let (width, height) = ctx.window_dimensions();
+
+        let data = ctx.backend.take_screenshot((width, height));
+
+        let reversed_data = data
+            .chunks(width as usize * 4)
+            .rev()
+            .flat_map(|row| row.iter())
+            .copied()
+            .collect();
+
+        RgbaImage::from_vec(width, height, reversed_data).unwrap()
     }
 }
