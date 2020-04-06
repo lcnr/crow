@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+- implement `error::Error` and `fmt::Display` for all error types.
+
 ## 0.7.0
 
 - remove `fn Context::take_screenshot`.
