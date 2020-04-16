@@ -134,7 +134,7 @@ impl Backend {
             bug!("unexpected dpi: {}", dpi);
         } else if dpi.fract().min(1.0 - dpi.fract()) > std::f64::EPSILON {
             warn!(
-                "fractional HiDPI scaling is not yet supported. but may work! (dpi: {})",
+                "fractional HiDPI scaling is not yet fully supported! (dpi: {})",
                 dpi
             );
         }
