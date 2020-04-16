@@ -133,7 +133,10 @@ impl Backend {
         if dpi < 0.5 {
             bug!("unexpected dpi: {}", dpi);
         } else if dpi.fract().min(1.0 - dpi.fract()) > std::f64::EPSILON {
-            warn!("fractional HiDPI scaling is not yet supported. but may work! (dpi: {})", dpi);
+            warn!(
+                "fractional HiDPI scaling is not yet supported. but may work! (dpi: {})",
+                dpi
+            );
         }
         let dpi = dpi.round() as u32;
         info!("Calculated DPI: {}", dpi);
