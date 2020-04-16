@@ -12,6 +12,7 @@ use crow::{
 };
 
 fn main() -> Result<(), crow::Error> {
+    std::env::set_var("RUST_LOG", "warn");
     let event_loop = EventLoop::new();
     let mut ctx = Context::new(WindowBuilder::new(), &event_loop)?;
 
