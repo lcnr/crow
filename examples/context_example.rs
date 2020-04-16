@@ -12,7 +12,7 @@ fn main() -> Result<(), crow::Error> {
     let event_loop = EventLoop::new();
     let mut ctx = Context::new(WindowBuilder::new(), &event_loop)?;
 
-    let texture = Texture::load(&mut ctx, "./textures/player.png")?;
+    let texture = Texture::load(&mut ctx, ".assets/textures/player.png")?;
 
     event_loop.run(
         move |event: Event<()>, _window_target: _, control_flow: &mut ControlFlow| match event {

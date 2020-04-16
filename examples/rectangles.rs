@@ -49,8 +49,8 @@ fn main() -> Result<(), crow::Error> {
         &event_loop,
     )?;
 
-    let rectangle_vertical = Texture::load(&mut ctx, "textures/rectangle_vertical.png")?;
-    let rectangle_horizontal = Texture::load(&mut ctx, "textures/rectangle_horizontal.png")?;
+    let rectangle_vertical = Texture::load(&mut ctx, "assets/textures/rectangle_vertical.png")?;
+    let rectangle_horizontal = Texture::load(&mut ctx, "assets/textures/rectangle_horizontal.png")?;
 
     let mut rng = rand::thread_rng();
 

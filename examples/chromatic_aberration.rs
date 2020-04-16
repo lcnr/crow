@@ -16,7 +16,7 @@ fn main() -> Result<(), crow::Error> {
     let event_loop = EventLoop::new();
     let mut ctx = Context::new(WindowBuilder::new(), &event_loop)?;
 
-    let texture = Texture::load(&mut ctx, "./textures/player.png")?;
+    let texture = Texture::load(&mut ctx, ".assets/textures/player.png")?;
     let mut target_texture = Texture::new(&mut ctx, (100, 100))?;
 
     let mut offset = 0;
