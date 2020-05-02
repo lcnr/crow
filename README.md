@@ -11,6 +11,8 @@
 [li]: https://img.shields.io/badge/License-MIT-blue.svg
 [ll]: ./LICENSE
 
+**This crate is still early in development and both highly unstable and not yet feature complete**
+
 A simple and fairly efficient pixel based 2D graphics library. **crow** is designed to be easy to use and
 should allow users to do nearly everything they want without requiring custom renderers or unsafe code.
 
