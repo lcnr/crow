@@ -32,6 +32,7 @@ pub struct OpenGlState {
     framebuffer: GLuint,
     texture: GLuint,
     source_scale: (u32, u32),
+    source_rotation: i32,
     color_modulation: [[f32; 4]; 4],
     source_texture_dimensions: (u32, u32),
     source_texture_offset: (u32, u32),
@@ -98,6 +99,10 @@ impl OpenGlState {
             // SAFETY: `source_scale` is declared as a `uvec2`
             gl::Uniform2ui(uniforms.source_scale, source_scale.0, source_scale.1);
 
+            let source_rotation = 1;
+            let rot_mat: [[f32; 2]; 2] = [[1.0, 0.0], [0.0, 1.0]];
+            gl::UniformMatrix2fv(uniforms.source_rotation, 1, gl::FALSE, rot_mat[0].as_ptr());
+
             // By default, all uniforms are 0
             let color_modulation = [
                 [0.0, 0.0, 0.0, 0.0],
@@ -163,6 +168,7 @@ impl OpenGlState {
                 framebuffer,
                 texture,
                 source_scale,
+                source_rotation,
                 color_modulation,
                 source_texture_dimensions,
                 source_texture_offset,
@@ -298,6 +304,23 @@ impl OpenGlState {
                     self.uniforms.source_scale,
                     self.source_scale.0,
                     self.source_scale.1,
+                );
+            }
+        }
+    }
+
+    pub fn update_source_rotation(&mut self, source_rotation: i32) {
+        if source_rotation != self.source_rotation {
+            // Build rotation matrices
+            let angle = (source_rotation as f32).to_radians();
+            let rot_mat: [[f32; 2]; 2] = [[angle.cos(), -angle.sin()], [angle.sin(), angle.cos()]];
+            self.source_rotation = source_rotation;
+            unsafe {
+                gl::UniformMatrix2fv(
+                    self.uniforms.source_rotation,
+                    1,
+                    gl::FALSE,
+                    rot_mat[0].as_ptr(),
                 );
             }
         }

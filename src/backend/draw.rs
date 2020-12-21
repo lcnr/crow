@@ -31,6 +31,7 @@ impl Backend {
         let viewport_dimensions = (target_dimensions.0 * hidpi, target_dimensions.1 * hidpi);
         s.update_viewport_dimensions(viewport_dimensions);
         s.update_source_scale(draw_config.scale);
+        s.update_source_rotation(draw_config.rotation);
         s.update_source_texture_dimensions(source_texture.dimensions);
         s.update_source_texture_offset(source_texture_offset);
         s.update_source_position(source_position);

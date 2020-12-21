@@ -317,6 +317,8 @@ impl Default for BlendMode {
 pub struct DrawConfig {
     /// The scale of the drawn texture in drawn pixels per source pixel.
     pub scale: (u32, u32),
+    /// The rotation of the drawn texture in degrees.
+    pub rotation: i32,
     /// If the texture should be flipped on the y axis.
     pub flip_vertically: bool,
     /// If the texture should be flipped on the x axis.
@@ -342,6 +344,7 @@ impl Default for DrawConfig {
     fn default() -> Self {
         Self {
             scale: (1, 1),
+            rotation: 0,
             depth: None,
             color_modulation: color::IDENTITY,
             invert_color: false,

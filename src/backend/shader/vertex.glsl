@@ -15,6 +15,7 @@ uniform bool flip_vertically;
 uniform bool flip_horizontally;
 
 uniform uvec2 source_scale;
+uniform mat2 source_rotation;
 uniform float depth;
 
 void main() {
@@ -28,8 +29,14 @@ void main() {
     }
 
     tex_coords = vec2(source_texture_offset + source_dimensions * tex_position) / source_texture_dimensions;
+
+    // Put square anchor in the center
+    // Then rotate it
+    vec2 trick = position - 0.5;
+    trick *= source_rotation;
+    trick = trick + 0.5;
     
-    vec2 target_pos = (position * vec2(source_scale * source_dimensions) + source_position) / target_dimensions;
+    vec2 target_pos = (trick * (vec2(source_scale * source_dimensions)) + source_position) / target_dimensions;
 
     target_pos = target_pos * 2.0 - 1.0;
 
