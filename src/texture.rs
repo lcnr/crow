@@ -38,7 +38,7 @@ impl Texture {
     pub fn load<P: AsRef<Path>>(ctx: &mut Context, path: P) -> Result<Texture, LoadTextureError> {
         let image = image::open(path).map_err(LoadTextureError::ImageError)?;
 
-        let raw = RawTexture::from_image(&mut ctx.backend, image.to_rgba())?;
+        let raw = RawTexture::from_image(&mut ctx.backend, image.to_rgba8())?;
 
         Ok(Self::from_raw(raw))
     }
