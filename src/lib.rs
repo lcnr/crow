@@ -318,6 +318,9 @@ pub struct DrawConfig {
     /// The scale of the drawn texture in drawn pixels per source pixel.
     pub scale: (u32, u32),
     /// The rotation of the drawn texture in degrees.
+    ///
+    /// Rotating by anything more precise than 90 degree steps can cause the source image
+    /// to be slightly distorted, especially if it has a very low resolution.
     pub rotation: i32,
     /// If the texture should be flipped on the y axis.
     pub flip_vertically: bool,
