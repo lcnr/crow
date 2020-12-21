@@ -99,7 +99,9 @@ impl OpenGlState {
             // SAFETY: `source_scale` is declared as a `uvec2`
             gl::Uniform2ui(uniforms.source_scale, source_scale.0, source_scale.1);
 
-            let source_rotation = 1;
+            let source_rotation = 0;
+            // An angle of 0 means identity matrix
+            // SAFETY: `source_rotation` is declared as a `mat2`
             let rot_mat: [[f32; 2]; 2] = [[1.0, 0.0], [0.0, 1.0]];
             gl::UniformMatrix2fv(uniforms.source_rotation, 1, gl::FALSE, rot_mat[0].as_ptr());
 
