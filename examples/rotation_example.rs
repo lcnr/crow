@@ -12,7 +12,10 @@ fn main() -> Result<(), crow::Error> {
     let event_loop = EventLoop::new();
     let mut ctx = Context::new(WindowBuilder::new(), &event_loop)?;
 
-    let texture = Texture::load(&mut ctx, "./textures/cat.png")?;
+    // Square image
+    let cat1 = Texture::load(&mut ctx, "./textures/cat1.png")?;
+    // Rectangle image
+    let cat2 = Texture::load(&mut ctx, "./textures/cat2.png")?;
 
     let mut a = 0;
 
@@ -28,10 +31,20 @@ fn main() -> Result<(), crow::Error> {
                 ctx.clear_color(&mut surface, (0.4, 0.4, 0.8, 1.0));
                 ctx.draw(
                     &mut surface,
-                    &texture,
-                    (0, 0),
+                    &cat1,
+                    (200, 300),
                     &DrawConfig {
                         rotation: a,
+                        ..DrawConfig::default()
+                    },
+                );
+
+                ctx.draw(
+                    &mut surface,
+                    &cat2,
+                    (400, 50),
+                    &DrawConfig {
+                        rotation: -a,
                         ..DrawConfig::default()
                     },
                 );
