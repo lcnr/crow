@@ -103,7 +103,7 @@ impl OpenGlState {
             // An angle of 0 means identity matrix
             // SAFETY: `source_rotation` is declared as a `mat2`
             let rot_mat: [[f32; 2]; 2] = [[1.0, 0.0], [0.0, 1.0]];
-            gl::UniformMatrix2fv(uniforms.source_rotation, 1, gl::FALSE, rot_mat[0].as_ptr());
+            gl::UniformMatrix2fv(uniforms.source_rotation, 1, gl::FALSE, rot_mat.as_ptr().cast::<f32>());
 
             // By default, all uniforms are 0
             let color_modulation = [
@@ -322,7 +322,7 @@ impl OpenGlState {
                     self.uniforms.source_rotation,
                     1,
                     gl::FALSE,
-                    rot_mat[0].as_ptr(),
+                    rot_mat.as_ptr().cast(),
                 );
             }
         }

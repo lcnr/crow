@@ -1,4 +1,6 @@
 //! A simple example drawing a texture.
+use std::time::Instant;
+
 use crow::{
     glutin::{
         event::{Event, WindowEvent},
@@ -17,8 +19,13 @@ fn main() -> Result<(), crow::Error> {
     // Rectangle image
     let cat2 = Texture::load(&mut ctx, "./textures/cat2.png")?;
 
-    let mut a = 0;
+    // `crow` allow the user to rotate textures.
+    // But be aware, a rotation that isn't a multiple of 90 will make
+    // the texture look distorted and thus not pixel perfect.
+    let mut a: f32 = 0.0;
+    let mut rotation: i32 = 0;
 
+    let mut delta = Instant::now();
     event_loop.run(
         move |event: Event<()>, _window_target: _, control_flow: &mut ControlFlow| match event {
             Event::WindowEvent {
@@ -34,7 +41,7 @@ fn main() -> Result<(), crow::Error> {
                     &cat1,
                     (200, 300),
                     &DrawConfig {
-                        rotation: a,
+                        rotation: rotation,
                         ..DrawConfig::default()
                     },
                 );
@@ -44,12 +51,21 @@ fn main() -> Result<(), crow::Error> {
                     &cat2,
                     (400, 50),
                     &DrawConfig {
-                        rotation: -a,
+                        rotation: -rotation,
                         ..DrawConfig::default()
                     },
                 );
                 ctx.present(surface).unwrap();
-                a += 3;
+
+                // Make rotation framerate independant
+                let duration = delta.elapsed();
+                a += (duration.as_micros()) as f32 / 16666.0;
+
+                // Pixel perfect rotation
+                rotation = (a - a % 90.0) as i32;
+
+                // Reset delta
+                delta = Instant::now();
             }
             _ => (),
         },
