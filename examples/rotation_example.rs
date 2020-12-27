@@ -62,7 +62,7 @@ fn main() -> Result<(), crow::Error> {
                 a += (duration.as_micros()) as f32 / 16666.0;
 
                 // Pixel perfect rotation
-                rotation = (a - a % 90.0) as i32;
+                rotation = a as i32;
 
                 // Reset delta
                 delta = Instant::now();
