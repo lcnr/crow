@@ -239,6 +239,7 @@ impl Program {
             source_dimensions: get_uniform_id(self.id, "source_dimensions"),
             source_position: get_uniform_id(self.id, "source_position"),
             source_scale: get_uniform_id(self.id, "source_scale"),
+            source_rotation: get_uniform_id(self.id, "source_rotation"),
             depth: get_uniform_id(self.id, "depth"),
         }
     }
@@ -268,6 +269,7 @@ pub struct Uniforms {
     pub source_dimensions: GLint,
     pub source_position: GLint,
     pub source_scale: GLint,
+    pub source_rotation: GLint,
     pub depth: GLint,
 }
 

@@ -24,7 +24,7 @@ pub fn test(ctx: &mut Context, name: &str, f: TestFn) -> Result<(), ()> {
     };
 
     let expected = if let Ok(image) = image::open(format!("tests/expected/{}.png", name)) {
-        image.to_rgba()
+        image.to_rgba8()
     } else {
         eprintln!("TEST FAILED (expected image not found): {}", name);
         return Err(());
