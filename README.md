@@ -18,7 +18,7 @@ should allow users to do nearly everything they want without requiring custom re
 
 The most recent documentation can be found [here](https://docs.rs/crow).
 
-The latest release can be viewed at the [0.5.0 tag](https://github.com/lcnr/crow/tree/v0.5.0).
+The latest release can be viewed at the [0.7.2 tag](https://github.com/lcnr/crow/tree/v0.7.2).
 
 You may also want to consider looking at [akari](https://github.com/lcnr/akari), a WIP showcase project.
 
