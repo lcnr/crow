@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.2
+
+- add incomplete support for fractional HiDPI scaling.
+- add rotation support to `DrawConfig`.
+
 ## 0.7.1
 
 - implement `error::Error` and `fmt::Display` for all error types.
