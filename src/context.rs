@@ -30,7 +30,7 @@ impl Context {
         window: WindowBuilder,
         event_loop: &EventLoop<T>,
     ) -> Result<Self, NewContextError> {
-        if let Ok(true) = INITIALIZED.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire) {
+        if INITIALIZED.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire) != Ok(false) {
             panic!("Tried to initialize a second Context");
         }
 
