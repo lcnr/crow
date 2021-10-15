@@ -132,7 +132,7 @@ impl Backend {
         let dpi = gl_context.window().scale_factor();
         if dpi < 0.5 {
             bug!("unexpected dpi: {}", dpi);
-        } else if dpi.fract().min(1.0 - dpi.fract()) > std::f64::EPSILON {
+        } else if dpi.fract().min(1.0 - dpi.fract()) > f64::EPSILON {
             warn!(
                 "fractional HiDPI scaling is not yet fully supported! (dpi: {})",
                 dpi
