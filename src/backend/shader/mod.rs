@@ -145,8 +145,9 @@ fn init_vertex_buffer(vbo: GLuint, data: &[GLfloat]) {
             data.as_ptr().cast(),
             gl::STATIC_DRAW,
         );
+    }
         // check for oom
-        let gl_error = gl::GetError();
+        let gl_error = unsafe { gl::GetError() };
         match gl_error {
             gl::NO_ERROR => (),
             gl::OUT_OF_MEMORY => {
@@ -157,7 +158,6 @@ fn init_vertex_buffer(vbo: GLuint, data: &[GLfloat]) {
             }
             e => bug!("unexpected error: {}", e),
         }
-    }
 }
 
 fn get_uniform_id(program: GLuint, name_str: &str) -> GLint {

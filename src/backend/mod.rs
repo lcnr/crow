@@ -60,16 +60,16 @@ impl GlConstants {
         // FIXES https://github.com/lcnr/crow/issues/15
         // only check the max framebuffer size if the extension
         // `ARB_framebuffer_no_attachments` exists
-        unsafe {
+        
             // TODO: change the constant to `&CStr` once `CStr::from_bytes_with_nul_unchecked` is const
             let expected_extension =
                 CStr::from_bytes_with_nul(ARB_framebuffer_no_attachments).unwrap();
             for i in 0.. {
-                let extension = gl::GetStringi(gl::EXTENSIONS, i);
-                let err = gl::GetError();
+                let extension = unsafe {gl::GetStringi(gl::EXTENSIONS, i)};
+                let err = unsafe {gl::GetError()};
                 match err {
                     gl::NO_ERROR => {
-                        let extension = CStr::from_ptr(extension.cast());
+                        let extension = unsafe {CStr::from_ptr(extension.cast())};
                         if expected_extension == extension {
                             let framebuffer_width =
                                 get(gl::MAX_FRAMEBUFFER_WIDTH, "framebuffer_width");
@@ -93,7 +93,7 @@ impl GlConstants {
                     err => bug!("unexpected error: {:?}", err),
                 }
             }
-        }
+        
 
         GlConstants {
             max_texture_size: (size, size),
@@ -249,8 +249,8 @@ impl Backend {
             });
         let mut data: Vec<u8> = Vec::with_capacity(byte_count);
 
+        self.state.update_texture(texture.id);
         unsafe {
-            self.state.update_texture(texture.id);
             // SAFETY:
             // `gl::TEXTURE_2D` is an accepted target
             // `gl::RGBA` is an accepted format
